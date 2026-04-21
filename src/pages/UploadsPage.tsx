@@ -1,6 +1,7 @@
 import { ChangeEvent, DragEvent, useState } from "react";
 import type { Messages } from "../app/messages";
 import { Icon } from "../components/Icon";
+import * as styles from "../styles";
 
 type UploadsPageProps = {
   t: Messages;
@@ -41,41 +42,58 @@ export function UploadsPage({ t }: UploadsPageProps) {
   }
 
   return (
-    <section className="content-stack">
-      <div className="section-heading">
-        <p className="eyebrow">Workspace</p>
-        <h1>{t.uploads.title}</h1>
-        <p>{t.uploads.description}</p>
+    <section className={styles.contentStackClass}>
+      <div className={styles.sectionHeadingClass}>
+        <p className={styles.eyebrowClass}>Workspace</p>
+        <h1 className={styles.pageTitleClass}>{t.uploads.title}</h1>
+        <p className={styles.mutedCopyClass}>{t.uploads.description}</p>
       </div>
 
       <label
-        className={`drop-zone${isDragging ? " is-dragging" : ""}`}
+        className={styles.cx(
+          styles.dropZoneClass,
+          isDragging && styles.dropZoneDraggingClass,
+        )}
         onDragEnter={() => setIsDragging(true)}
         onDragLeave={() => setIsDragging(false)}
         onDragOver={(event) => event.preventDefault()}
         onDrop={handleDrop}
       >
-        <Icon name="upload" />
-        <strong>{t.uploads.drop}</strong>
+        <span className="text-4xl text-[#2f6687] dark:text-[#8ac8e5]">
+          <Icon name="upload" />
+        </span>
+        <strong className="text-xl text-[#1d2520] dark:text-[#f2f5ef]">
+          {t.uploads.drop}
+        </strong>
         <span>{t.uploads.choose}</span>
-        <input multiple onChange={handleInput} type="file" />
+        <input
+          className={styles.hiddenFileClass}
+          multiple
+          onChange={handleInput}
+          type="file"
+        />
       </label>
 
-      <div className="upload-list">
-        <div className="list-heading">
-          <h2>{t.uploads.choose}</h2>
-          <button className="secondary-action" disabled={files.length === 0} onClick={() => setFiles([])} type="button">
+      <div className={styles.listPanelClass}>
+        <div className={styles.listHeadingClass}>
+          <h2 className="text-lg font-bold">{t.uploads.choose}</h2>
+          <button
+            className={styles.secondaryActionClass}
+            disabled={files.length === 0}
+            onClick={() => setFiles([])}
+            type="button"
+          >
             {t.uploads.clear}
           </button>
         </div>
         {files.length === 0 ? (
-          <p className="empty-state">{t.uploads.empty}</p>
+          <p className={styles.emptyStateClass}>{t.uploads.empty}</p>
         ) : (
-          <ul>
+          <ul className={styles.plainListClass}>
             {files.map((file) => (
-              <li key={file.id}>
-                <span>{file.name}</span>
-                <small>
+              <li className={styles.listItemClass} key={file.id}>
+                <span className={styles.listItemTitleClass}>{file.name}</span>
+                <small className={styles.listItemMetaClass}>
                   {file.type} / {formatBytes(file.size)}
                 </small>
               </li>

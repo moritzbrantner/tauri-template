@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import type { Messages } from "../app/messages";
 import { employees, type Employee } from "../data/employees";
+import * as styles from "../styles";
 
 type TablePageProps = {
   t: Messages;
@@ -64,28 +65,35 @@ export function TablePage({ t }: TablePageProps) {
   }
 
   return (
-    <section className="content-stack table-page">
-      <div className="section-heading">
-        <p className="eyebrow">Workspace</p>
-        <h1>{t.table.title}</h1>
-        <p>{t.table.description}</p>
+    <section className={styles.contentStackClass}>
+      <div className={styles.sectionHeadingClass}>
+        <p className={styles.eyebrowClass}>Workspace</p>
+        <h1 className={styles.pageTitleClass}>{t.table.title}</h1>
+        <p className={styles.mutedCopyClass}>{t.table.description}</p>
       </div>
 
-      <div className="table-toolbar">
+      <div className={styles.tableToolbarClass}>
         <input
           aria-label={t.table.search}
+          className={styles.cx(styles.controlClass, "flex-[1_1_240px]")}
           onChange={(event) => setQuery(event.currentTarget.value)}
           placeholder={t.table.search}
           value={query}
         />
-        <select aria-label="Team" onChange={(event) => setTeam(event.currentTarget.value)} value={team}>
+        <select
+          aria-label="Team"
+          className={styles.cx(styles.controlClass, "flex-[0_1_180px]")}
+          onChange={(event) => setTeam(event.currentTarget.value)}
+          value={team}
+        >
           <option value="all">{t.table.allTeams}</option>
           {teams.map((teamName) => (
             <option key={teamName}>{teamName}</option>
           ))}
         </select>
-        <label className="toggle-row compact-toggle">
+        <label className={styles.cx(styles.toggleRowClass, "min-h-[42px] px-1")}>
           <input
+            className={styles.checkboxClass}
             checked={activeOnly}
             onChange={(event) => setActiveOnly(event.currentTarget.checked)}
             type="checkbox"
@@ -94,37 +102,54 @@ export function TablePage({ t }: TablePageProps) {
         </label>
       </div>
 
-      <p className="result-count">
+      <p className={styles.resultCountClass}>
         {t.table.showing} {filteredEmployees.length} {t.table.of} {employees.length}
       </p>
 
-      <div className="table-shell">
-        <table>
+      <div className={styles.tableShellClass}>
+        <table className={styles.tableClass}>
           <thead>
             <tr>
               {columns.map((column) => (
-                <th key={column.key}>
-                  <button onClick={() => toggleSort(column.key)} type="button">
+                <th className={styles.tableHeadCellClass} key={column.key}>
+                  <button
+                    className={styles.tableSortButtonClass}
+                    onClick={() => toggleSort(column.key)}
+                    type="button"
+                  >
                     {column.label}
-                    {sortKey === column.key ? <span>{sortDirection === "asc" ? "Asc" : "Desc"}</span> : null}
+                    {sortKey === column.key ? (
+                      <span className={styles.sortBadgeClass}>
+                        {sortDirection === "asc" ? "Asc" : "Desc"}
+                      </span>
+                    ) : null}
                   </button>
                 </th>
               ))}
-              <th>Active</th>
-              <th>Bonus</th>
+              <th className={styles.tableHeadCellClass}>Active</th>
+              <th className={styles.tableHeadCellClass}>Bonus</th>
             </tr>
           </thead>
           <tbody>
             {filteredEmployees.map((employee) => (
-              <tr key={employee.id}>
-                <td>{employee.id}</td>
-                <td>{employee.firstName}</td>
-                <td>{employee.lastName}</td>
-                <td>{employee.team}</td>
-                <td>{formatCurrency(employee.salary)}</td>
-                <td>{employee.startDate}</td>
-                <td>{employee.active ? "Yes" : "No"}</td>
-                <td>{employee.bonusEligible ? "Yes" : "No"}</td>
+              <tr
+                className="hover:bg-[#f0f4ef] dark:hover:bg-[#252d27]"
+                key={employee.id}
+              >
+                <td className={styles.tableCellClass}>{employee.id}</td>
+                <td className={styles.tableCellClass}>{employee.firstName}</td>
+                <td className={styles.tableCellClass}>{employee.lastName}</td>
+                <td className={styles.tableCellClass}>{employee.team}</td>
+                <td className={styles.tableCellClass}>
+                  {formatCurrency(employee.salary)}
+                </td>
+                <td className={styles.tableCellClass}>{employee.startDate}</td>
+                <td className={styles.tableCellClass}>
+                  {employee.active ? "Yes" : "No"}
+                </td>
+                <td className={styles.tableCellClass}>
+                  {employee.bonusEligible ? "Yes" : "No"}
+                </td>
               </tr>
             ))}
           </tbody>

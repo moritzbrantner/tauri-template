@@ -1,12 +1,6 @@
-<<<<<<< HEAD
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { ChangeEvent } from "react";
+import type { ChangeEvent, CSSProperties } from "react";
 import { invoke } from "@tauri-apps/api/core";
-=======
-import reactLogo from "./assets/react.svg";
-import { greet as greetCommand } from "./greet";
-import { useEffect, useMemo, useState } from "react";
->>>>>>> 1e5cf3cce47309ac647b3bae55b8ffc2eabff0b9
 import "./App.css";
 import { messages } from "./app/messages";
 import {
@@ -25,6 +19,7 @@ import { FormsPage } from "./pages/FormsPage";
 import { HomePage } from "./pages/HomePage";
 import { TablePage } from "./pages/TablePage";
 import { UploadsPage } from "./pages/UploadsPage";
+import * as styles from "./styles";
 
 type Theme = "light" | "dark";
 
@@ -278,15 +273,23 @@ function App() {
   }
 
   const ActivePage = renderPage(activePage, t, navigate);
+  const accentColor = HEX_COLOR_PATTERN.test(settings.accentColor)
+    ? settings.accentColor
+    : DEFAULT_SETTINGS.accentColor;
 
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
-        <div className="brand-block">
-          <div className="brand-mark">TT</div>
+    <div
+      className={styles.appShellClass}
+      style={{ "--primary": accentColor } as CSSProperties}
+    >
+      <aside className={styles.sidebarClass}>
+        <div className={styles.brandBlockClass}>
+          <div className={styles.brandMarkClass}>TT</div>
           <div>
             <strong>{appManifest.displayName}</strong>
-            <span>{appManifest.platform}</span>
+            <span className="block text-sm text-[#647067] uppercase dark:text-[#a9b5ad]">
+              {appManifest.platform}
+            </span>
           </div>
         </div>
 
@@ -301,18 +304,24 @@ function App() {
             }
 
             return (
-              <div className="nav-group" key={category}>
-                <p>{t.app[category]}</p>
+              <div className={styles.navGroupClass} key={category}>
+                <p className={styles.navGroupLabelClass}>{t.app[category]}</p>
                 {items.map((item) => (
                   <button
-                    className={item.pageId === activePage ? "active" : ""}
+                    className={styles.cx(
+                      styles.navButtonClass,
+                      item.pageId === activePage &&
+                        styles.navButtonActiveClass,
+                    )}
                     key={item.pageId}
                     onClick={() => navigate(item.pageId)}
                     type="button"
                   >
                     <Icon name={pageIcons[item.pageId]} />
                     <span>{t.pages[item.pageId]}</span>
-                    <kbd>Alt {item.hotkey.toUpperCase()}</kbd>
+                    <kbd className={styles.kbdClass}>
+                      Alt {item.hotkey.toUpperCase()}
+                    </kbd>
                   </button>
                 ))}
               </div>
@@ -321,17 +330,22 @@ function App() {
         </nav>
       </aside>
 
-      <main className="main-surface">
-        <header className="topbar">
+      <main className="min-w-0">
+        <header className={styles.topbarClass}>
           <div>
-            <span>{appManifest.defaultLocaleMetadata.title}</span>
-            <strong>{t.pages[activePage]}</strong>
+            <span className={styles.topbarMetaClass}>
+              {appManifest.defaultLocaleMetadata.title}
+            </span>
+            <strong className={styles.topbarTitleClass}>
+              {t.pages[activePage]}
+            </strong>
           </div>
 
-          <div className="topbar-controls">
-            <label className="select-control">
-              <span>{t.app.language}</span>
+          <div className={styles.topbarControlsClass}>
+            <label className={styles.selectLabelClass}>
+              <span className={styles.topbarMetaClass}>{t.app.language}</span>
               <select
+                className={styles.compactSelectClass}
                 onChange={(event) =>
                   setLocale(event.currentTarget.value as AppLocale)
                 }
@@ -343,19 +357,25 @@ function App() {
             </label>
 
             <div
-              className="segmented-control"
+              className={styles.segmentedControlClass}
               role="group"
               aria-label={t.app.theme}
             >
               <button
-                className={theme === "light" ? "active" : ""}
+                className={styles.cx(
+                  styles.segmentedButtonClass,
+                  theme === "light" && styles.segmentedButtonActiveClass,
+                )}
                 onClick={() => setSettings({ ...settings, theme: "light" })}
                 type="button"
               >
                 <Icon name="sun" label={t.app.light} />
               </button>
               <button
-                className={theme === "dark" ? "active" : ""}
+                className={styles.cx(
+                  styles.segmentedButtonClass,
+                  theme === "dark" && styles.segmentedButtonActiveClass,
+                )}
                 onClick={() => setSettings({ ...settings, theme: "dark" })}
                 type="button"
               >
@@ -365,23 +385,32 @@ function App() {
           </div>
         </header>
 
-        <div className="page-surface">{ActivePage}</div>
+        <div className={styles.pageSurfaceClass}>{ActivePage}</div>
       </main>
 
-      <aside className="settings-rail" aria-label={t.app.settings}>
-        <div className="settings-heading">
+      <aside className={styles.settingsRailClass} aria-label={t.app.settings}>
+        <div className={styles.settingsHeadingClass}>
           <Icon name="settings" />
           <strong>{t.app.settings}</strong>
-          <span className={hasUnsavedChanges ? "save-state dirty" : "save-state"}>
+          <span
+            className={styles.cx(
+              styles.saveStateClass,
+              hasUnsavedChanges && styles.saveStateDirtyClass,
+            )}
+          >
             {hasUnsavedChanges ? "Unsaved" : "Saved"}
           </span>
         </div>
 
-        <section className="native-settings" aria-label="Application preferences">
-          <div className="settings-grid">
-            <label className="field">
-              <span>Theme</span>
+        <section
+          className={styles.nativeSettingsClass}
+          aria-label="Application preferences"
+        >
+          <div className={styles.settingsGridClass}>
+            <label className={styles.fieldLabelClass}>
+              <span className={styles.fieldTextClass}>Theme</span>
               <select
+                className={styles.controlClass}
                 value={settings.theme}
                 onChange={(event) =>
                   setSettings({
@@ -396,10 +425,11 @@ function App() {
               </select>
             </label>
 
-            <label className="field color-field">
-              <span>Accent color</span>
-              <div>
+            <label className={styles.fieldLabelClass}>
+              <span className={styles.fieldTextClass}>Accent color</span>
+              <div className={styles.colorFieldGridClass}>
                 <input
+                  className={styles.colorInputClass}
                   type="color"
                   value={settings.accentColor}
                   onChange={(event) =>
@@ -411,6 +441,7 @@ function App() {
                   aria-label="Accent color"
                 />
                 <input
+                  className={styles.controlClass}
                   value={settings.accentColor}
                   onChange={(event) =>
                     setSettings({
@@ -423,9 +454,10 @@ function App() {
               </div>
             </label>
 
-            <label className="field">
-              <span>Default project name</span>
+            <label className={styles.fieldLabelClass}>
+              <span className={styles.fieldTextClass}>Default project name</span>
               <input
+                className={styles.controlClass}
                 value={settings.defaultProjectName}
                 onChange={(event) =>
                   setSettings({
@@ -436,8 +468,9 @@ function App() {
               />
             </label>
 
-            <label className="switch-field">
+            <label className={styles.switchFieldClass}>
               <input
+                className={styles.checkboxClass}
                 type="checkbox"
                 checked={settings.autoSave}
                 onChange={(event) =>
@@ -447,14 +480,17 @@ function App() {
                   })
                 }
               />
-              <span>
-                <strong>Auto save</strong>
-                <small>Remember this preference for editor flows.</small>
+              <span className={styles.switchTextClass}>
+                <strong className={styles.fieldTextClass}>Auto save</strong>
+                <small className={styles.switchHelpClass}>
+                  Remember this preference for editor flows.
+                </small>
               </span>
             </label>
 
-            <label className="switch-field">
+            <label className={styles.switchFieldClass}>
               <input
+                className={styles.checkboxClass}
                 type="checkbox"
                 checked={settings.compactMode}
                 onChange={(event) =>
@@ -464,25 +500,27 @@ function App() {
                   })
                 }
               />
-              <span>
-                <strong>Compact mode</strong>
-                <small>Use tighter spacing in dense screens.</small>
+              <span className={styles.switchTextClass}>
+                <strong className={styles.fieldTextClass}>Compact mode</strong>
+                <small className={styles.switchHelpClass}>
+                  Use tighter spacing in dense screens.
+                </small>
               </span>
             </label>
           </div>
 
           <input
             ref={fileInputRef}
-            className="hidden-file"
+            className="hidden"
             type="file"
             accept="application/json,.json"
             onChange={importSettings}
           />
 
-          <div className="action-bar">
+          <div className={styles.actionBarClass}>
             <button
               type="button"
-              className="secondary-action"
+              className={styles.cx(styles.secondaryActionClass, "px-2.5")}
               onClick={() => fileInputRef.current?.click()}
               disabled={isBusy}
             >
@@ -490,7 +528,7 @@ function App() {
             </button>
             <button
               type="button"
-              className="secondary-action"
+              className={styles.cx(styles.secondaryActionClass, "px-2.5")}
               onClick={exportSettings}
               disabled={isBusy}
             >
@@ -498,7 +536,7 @@ function App() {
             </button>
             <button
               type="button"
-              className="primary-action"
+              className={styles.cx(styles.primaryActionClass, "px-2.5")}
               onClick={() => saveSettings()}
               disabled={isBusy}
             >
@@ -506,26 +544,43 @@ function App() {
             </button>
           </div>
 
-          <p className={`notice ${notice.kind}`} role="status">
+          <p
+            className={styles.cx(
+              styles.noticeClass,
+              notice.kind === "success" && styles.noticeSuccessClass,
+              notice.kind === "error" && styles.noticeErrorClass,
+            )}
+            role="status"
+          >
             {notice.message}
           </p>
         </section>
 
         {featureFlags["settings.featureFlags"] ? (
-          <div className="feature-toggles">
-            <p>{t.app.features}</p>
+          <div className={styles.featureTogglesClass}>
+            <p
+              className={styles.cx(
+                styles.mutedUpperLabelClass,
+                "max-[1120px]:col-span-full max-[820px]:col-auto",
+              )}
+            >
+              {t.app.features}
+            </p>
             {appManifest.featureFlags
               .filter((featureKey) => featureKey !== "settings.featureFlags")
               .map((featureKey) => (
-                <label key={featureKey}>
+                <label className={styles.featureToggleLabelClass} key={featureKey}>
                   <input
+                    className={styles.checkboxClass}
                     checked={featureFlags[featureKey]}
                     onChange={(event) =>
                       setFeatureFlag(featureKey, event.currentTarget.checked)
                     }
                     type="checkbox"
                   />
-                  <span>{featureKey}</span>
+                  <span className={styles.featureToggleTextClass}>
+                    {featureKey}
+                  </span>
                 </label>
               ))}
           </div>

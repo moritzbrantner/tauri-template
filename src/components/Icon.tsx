@@ -1,3 +1,5 @@
+import { iconClass } from "../styles";
+
 type IconName =
   | "home"
   | "info"
@@ -38,7 +40,7 @@ export function Icon({ name, label }: IconProps) {
     <svg
       aria-hidden={label ? undefined : true}
       aria-label={label}
-      className="icon"
+      className={iconClass}
       fill="none"
       role={label ? "img" : undefined}
       stroke="currentColor"

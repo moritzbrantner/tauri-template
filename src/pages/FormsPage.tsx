@@ -1,6 +1,7 @@
 import { FormEvent, useMemo, useState } from "react";
 import type { Messages } from "../app/messages";
 import { Icon } from "../components/Icon";
+import * as styles from "../styles";
 
 type FormsPageProps = {
   t: Messages;
@@ -43,36 +44,46 @@ export function FormsPage({ t }: FormsPageProps) {
   }
 
   return (
-    <section className="content-stack">
-      <div className="section-heading">
-        <p className="eyebrow">Workspace</p>
-        <h1>{t.forms.title}</h1>
-        <p>{t.forms.description}</p>
+    <section className={styles.contentStackClass}>
+      <div className={styles.sectionHeadingClass}>
+        <p className={styles.eyebrowClass}>Workspace</p>
+        <h1 className={styles.pageTitleClass}>{t.forms.title}</h1>
+        <p className={styles.mutedCopyClass}>{t.forms.description}</p>
       </div>
 
-      <form className="workspace-form" onSubmit={handleSubmit}>
-        <label>
-          <span>Display name</span>
+      <form className={styles.formPanelClass} onSubmit={handleSubmit}>
+        <label className={styles.fieldLabelClass}>
+          <span className={styles.fieldTextClass}>Display name</span>
           <input
+            className={styles.controlClass}
             onChange={(event) => updateField("displayName", event.currentTarget.value)}
             value={form.displayName}
           />
-          {errors.displayName ? <small>{errors.displayName}</small> : null}
+          {errors.displayName ? (
+            <small className={styles.errorTextClass}>{errors.displayName}</small>
+          ) : null}
         </label>
 
-        <label>
-          <span>Email</span>
+        <label className={styles.fieldLabelClass}>
+          <span className={styles.fieldTextClass}>Email</span>
           <input
+            className={styles.controlClass}
             onChange={(event) => updateField("email", event.currentTarget.value)}
             type="email"
             value={form.email}
           />
-          {errors.email ? <small>{errors.email}</small> : null}
+          {errors.email ? (
+            <small className={styles.errorTextClass}>{errors.email}</small>
+          ) : null}
         </label>
 
-        <label>
-          <span>Team</span>
-          <select onChange={(event) => updateField("team", event.currentTarget.value)} value={form.team}>
+        <label className={styles.fieldLabelClass}>
+          <span className={styles.fieldTextClass}>Team</span>
+          <select
+            className={styles.controlClass}
+            onChange={(event) => updateField("team", event.currentTarget.value)}
+            value={form.team}
+          >
             <option>Platform</option>
             <option>Product</option>
             <option>Data</option>
@@ -81,19 +92,23 @@ export function FormsPage({ t }: FormsPageProps) {
           </select>
         </label>
 
-        <label>
-          <span>Salary</span>
+        <label className={styles.fieldLabelClass}>
+          <span className={styles.fieldTextClass}>Salary</span>
           <input
+            className={styles.controlClass}
             min="0"
             onChange={(event) => updateField("salary", event.currentTarget.value)}
             type="number"
             value={form.salary}
           />
-          {errors.salary ? <small>{errors.salary}</small> : null}
+          {errors.salary ? (
+            <small className={styles.errorTextClass}>{errors.salary}</small>
+          ) : null}
         </label>
 
-        <label className="toggle-row">
+        <label className={styles.toggleRowClass}>
           <input
+            className={styles.checkboxClass}
             checked={form.remote}
             onChange={(event) => updateField("remote", event.currentTarget.checked)}
             type="checkbox"
@@ -101,13 +116,17 @@ export function FormsPage({ t }: FormsPageProps) {
           <span>Remote eligible</span>
         </label>
 
-        <div className="form-footer">
-          <button className="primary-action" disabled={hasErrors} type="submit">
+        <div className={styles.formFooterClass}>
+          <button
+            className={styles.primaryActionClass}
+            disabled={hasErrors}
+            type="submit"
+          >
             <Icon name="check" />
             {t.forms.save}
           </button>
           <button
-            className="secondary-action"
+            className={styles.secondaryActionClass}
             onClick={() => {
               setForm(initialForm);
               setSavedMessage("");
@@ -117,7 +136,9 @@ export function FormsPage({ t }: FormsPageProps) {
             <Icon name="refresh" />
             {t.forms.reset}
           </button>
-          {savedMessage ? <p className="status-text">{savedMessage}</p> : null}
+          {savedMessage ? (
+            <p className={styles.statusTextClass}>{savedMessage}</p>
+          ) : null}
         </div>
       </form>
     </section>

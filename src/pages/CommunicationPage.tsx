@@ -1,6 +1,7 @@
 import { FormEvent, useState } from "react";
 import type { Messages } from "../app/messages";
 import { Icon } from "../components/Icon";
+import * as styles from "../styles";
 
 type CommunicationPageProps = {
   t: Messages;
@@ -56,44 +57,53 @@ export function CommunicationPage({ t }: CommunicationPageProps) {
   }
 
   return (
-    <section className="content-stack communication-page">
-      <div className="section-heading">
-        <p className="eyebrow">Workspace</p>
-        <h1>{t.communication.title}</h1>
-        <p>{t.communication.description}</p>
+    <section className={styles.contentStackClass}>
+      <div className={styles.sectionHeadingClass}>
+        <p className={styles.eyebrowClass}>Workspace</p>
+        <h1 className={styles.pageTitleClass}>{t.communication.title}</h1>
+        <p className={styles.mutedCopyClass}>{t.communication.description}</p>
       </div>
 
-      <form className="composer" onSubmit={handleSubmit}>
-        <label>
-          <span>{t.communication.compose}</span>
+      <form className={styles.composerClass} onSubmit={handleSubmit}>
+        <label className={styles.fieldLabelClass}>
+          <span className={styles.fieldTextClass}>{t.communication.compose}</span>
           <textarea
+            className={styles.textareaClass}
             onChange={(event) => setDraft(event.currentTarget.value)}
             placeholder={t.communication.messagePlaceholder}
             value={draft}
           />
         </label>
-        <button className="primary-action" type="submit">
+        <button className={styles.primaryActionClass} type="submit">
           <Icon name="send" />
           {t.communication.send}
         </button>
       </form>
 
-      <div className="message-panel">
-        <div className="list-heading">
-          <h2>{t.communication.inbox}</h2>
+      <div className={styles.listPanelClass}>
+        <div className={styles.listHeadingClass}>
+          <h2 className="text-lg font-bold">{t.communication.inbox}</h2>
           <button
-            className="secondary-action"
+            className={styles.secondaryActionClass}
             onClick={() => setMessages((current) => current.map((message) => ({ ...message, read: true })))}
             type="button"
           >
             {t.communication.markAll}
           </button>
         </div>
-        <ul className="message-list">
+        <ul className={styles.plainListClass}>
           {messages.map((message) => (
-            <li className={message.read ? "is-read" : ""} key={message.id}>
-              <span>{message.text}</span>
-              <small>
+            <li
+              className={styles.cx(
+                styles.listItemClass,
+                "border-l-4 border-l-[var(--primary)]",
+                message.read &&
+                  "border-l-[#d5ded8] text-[#647067] dark:border-l-[#3c463f] dark:text-[#a9b5ad]",
+              )}
+              key={message.id}
+            >
+              <span className={styles.listItemTitleClass}>{message.text}</span>
+              <small className={styles.listItemMetaClass}>
                 {t.communication.queued} {message.queuedAt}
               </small>
             </li>
