@@ -258,6 +258,25 @@ export const noticeSuccessClass = "text-[var(--primary)]";
 
 export const noticeErrorClass = "text-[#9c3d4c] dark:text-[#f08c9a]";
 
+export const updatePanelClass =
+  "mb-5 grid gap-3 border-b border-[#d5ded8] pb-5 dark:border-[#3c463f]";
+
+export const updateHeadingClass = "flex min-h-8 items-center gap-2";
+
+export const updateMessageClass =
+  "m-0 text-sm leading-normal text-[#647067] dark:text-[#a9b5ad]";
+
+export const updateNotesClass =
+  "max-h-28 overflow-auto rounded-lg border border-[#d5ded8] bg-[#f0f4ef] p-3 text-sm leading-normal whitespace-pre-wrap text-[#1d2520] dark:border-[#3c463f] dark:bg-[#252d27] dark:text-[#f2f5ef]";
+
+export const updateProgressTrackClass =
+  "h-2 overflow-hidden rounded-full bg-[#d5ded8] dark:bg-[#3c463f]";
+
+export const updateProgressBarClass =
+  "block h-full rounded-full bg-[var(--primary)] transition-[width]";
+
+export const updateActionsClass = "grid grid-cols-2 gap-2 max-[520px]:grid-cols-1";
+
 export const featureTogglesClass =
   "grid gap-2 max-[1120px]:grid-cols-2 max-[820px]:grid-cols-1";
 

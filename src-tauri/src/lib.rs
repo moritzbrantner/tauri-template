@@ -259,7 +259,6 @@ fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
 }
 
-<<<<<<< HEAD
 #[tauri::command]
 fn load_settings(app: AppHandle) -> Result<AppSettings, String> {
     let path = settings_path(&app)?;
@@ -415,7 +414,6 @@ fn folder_watch_status(
     Ok(active_watch.as_ref().map(|watch| watch.status.clone()))
 }
 
-=======
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -426,12 +424,13 @@ mod tests {
     }
 }
 
->>>>>>> 1e5cf3cce47309ac647b3bae55b8ffc2eabff0b9
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .manage(FolderWatchState::default())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
             greet,
             load_settings,

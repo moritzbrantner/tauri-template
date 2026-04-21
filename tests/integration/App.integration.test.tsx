@@ -6,6 +6,7 @@ import App from "../../src/App";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(),
+  isTauri: vi.fn(() => false),
 }));
 
 describe("App", () => {

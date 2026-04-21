@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, CSSProperties } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { invoke, isTauri } from "@tauri-apps/api/core";
+import type { DownloadEvent, Update } from "@tauri-apps/plugin-updater";
 import "./App.css";
 import { messages } from "./app/messages";
 import {
@@ -36,6 +37,20 @@ type Notice = {
   message: string;
 };
 
+type UpdatePhase =
+  | "idle"
+  | "checking"
+  | "available"
+  | "downloading"
+  | "installing"
+  | "ready"
+  | "error";
+
+type DownloadProgress = {
+  downloaded: number;
+  contentLength: number;
+};
+
 const DEFAULT_SETTINGS: AppSettings = {
   theme: "system",
   accentColor: "#2f6fed",
@@ -56,6 +71,15 @@ const pageIcons: Record<PageId, Parameters<typeof Icon>[0]["name"]> = {
 
 function messageFromError(error: unknown) {
   return error instanceof Error ? error.message : String(error);
+}
+
+function formatMessage(
+  template: string,
+  values: Record<string, string | number>,
+) {
+  return template.replace(/{{(\w+)}}/g, (match, key) =>
+    Object.prototype.hasOwnProperty.call(values, key) ? String(values[key]) : match,
+  );
 }
 
 function readSystemTheme(): Theme {
@@ -85,7 +109,15 @@ function App() {
     kind: "info",
     message: "Loading saved settings...",
   });
+  const [availableUpdate, setAvailableUpdate] = useState<Update | null>(null);
+  const [updatePhase, setUpdatePhase] = useState<UpdatePhase>("idle");
+  const [updateMessage, setUpdateMessage] = useState("");
+  const [downloadProgress, setDownloadProgress] = useState<DownloadProgress>({
+    downloaded: 0,
+    contentLength: 0,
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const availableUpdateRef = useRef<Update | null>(null);
   const t = messages[locale];
 
   const navigation = useMemo(() => {
@@ -103,6 +135,19 @@ function App() {
   );
 
   const theme = settings.theme === "system" ? systemTheme : settings.theme;
+  const isUpdateBusy =
+    updatePhase === "checking" ||
+    updatePhase === "downloading" ||
+    updatePhase === "installing" ||
+    updatePhase === "ready";
+  const updateProgressPercent = downloadProgress.contentLength
+    ? Math.min(
+        100,
+        Math.round(
+          (downloadProgress.downloaded / downloadProgress.contentLength) * 100,
+        ),
+      )
+    : 0;
 
   useEffect(() => {
     const query = window.matchMedia("(prefers-color-scheme: dark)");
@@ -187,6 +232,14 @@ function App() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [navigation]);
 
+  useEffect(() => {
+    void checkForUpdates(false);
+
+    return () => {
+      void availableUpdateRef.current?.close().catch(() => undefined);
+    };
+  }, []);
+
   function navigate(pageId: PageId) {
     const page = pageById.get(pageId);
     if (!page) {
@@ -199,6 +252,115 @@ function App() {
 
   function setFeatureFlag(featureKey: keyof FeatureFlags, enabled: boolean) {
     setFeatureFlags((current) => ({ ...current, [featureKey]: enabled }));
+  }
+
+  function storeAvailableUpdate(update: Update | null) {
+    const currentUpdate = availableUpdateRef.current;
+    if (currentUpdate && currentUpdate !== update) {
+      void currentUpdate.close().catch(() => undefined);
+    }
+
+    availableUpdateRef.current = update;
+    setAvailableUpdate(update);
+  }
+
+  function handleDownloadEvent(event: DownloadEvent) {
+    switch (event.event) {
+      case "Started":
+        setDownloadProgress({
+          downloaded: 0,
+          contentLength: event.data.contentLength ?? 0,
+        });
+        setUpdateMessage(t.app.updateDownloading);
+        break;
+      case "Progress":
+        setDownloadProgress((current) => ({
+          ...current,
+          downloaded: current.downloaded + event.data.chunkLength,
+        }));
+        break;
+      case "Finished":
+        setDownloadProgress((current) => ({
+          ...current,
+          downloaded: current.contentLength,
+        }));
+        setUpdatePhase("installing");
+        setUpdateMessage(t.app.updateInstalling);
+        break;
+    }
+  }
+
+  async function checkForUpdates(reportUnavailable = true) {
+    if (!isTauri()) {
+      if (reportUnavailable) {
+        setUpdatePhase("idle");
+        setUpdateMessage(t.app.updatesDesktopOnly);
+      }
+      return;
+    }
+
+    storeAvailableUpdate(null);
+    setDownloadProgress({ downloaded: 0, contentLength: 0 });
+    setUpdatePhase("checking");
+    setUpdateMessage(t.app.checkingUpdates);
+
+    try {
+      const { check } = await import("@tauri-apps/plugin-updater");
+      const update = await check({ timeout: 30000 });
+
+      if (!update) {
+        setUpdatePhase("idle");
+        setUpdateMessage(reportUnavailable ? t.app.upToDate : "");
+        return;
+      }
+
+      storeAvailableUpdate(update);
+      setUpdatePhase("available");
+      setUpdateMessage(
+        formatMessage(t.app.updateAvailable, { version: update.version }),
+      );
+    } catch (error) {
+      setUpdatePhase(reportUnavailable ? "error" : "idle");
+      setUpdateMessage(
+        reportUnavailable
+          ? formatMessage(t.app.updateCheckFailed, {
+              message: messageFromError(error),
+            })
+          : "",
+      );
+    }
+  }
+
+  async function installAvailableUpdate() {
+    if (!availableUpdate || isUpdateBusy) {
+      return;
+    }
+
+    setUpdatePhase("downloading");
+    setUpdateMessage(t.app.updateDownloading);
+    setDownloadProgress({ downloaded: 0, contentLength: 0 });
+
+    try {
+      await availableUpdate.downloadAndInstall(handleDownloadEvent);
+      availableUpdateRef.current = null;
+      setAvailableUpdate(null);
+      setUpdatePhase("ready");
+      setUpdateMessage(t.app.updateReady);
+
+      try {
+        const { relaunch } = await import("@tauri-apps/plugin-process");
+        await relaunch();
+      } catch {
+        setUpdateMessage(t.app.updateRestartFailed);
+      }
+    } catch (error) {
+      setUpdatePhase("error");
+      setUpdateMessage(
+        formatMessage(t.app.updateInstallFailed, {
+          message: messageFromError(error),
+        }),
+      );
+    }
   }
 
   async function saveSettings(nextSettings = settings) {
@@ -554,6 +716,69 @@ function App() {
           >
             {notice.message}
           </p>
+        </section>
+
+        <section className={styles.updatePanelClass} aria-label={t.app.updates}>
+          <div className={styles.updateHeadingClass}>
+            <Icon name="refresh" />
+            <strong>{t.app.updates}</strong>
+          </div>
+
+          {updateMessage ? (
+            <p
+              className={styles.cx(
+                styles.updateMessageClass,
+                updatePhase === "ready" && styles.noticeSuccessClass,
+                updatePhase === "error" && styles.noticeErrorClass,
+              )}
+              role="status"
+            >
+              {updateMessage}
+            </p>
+          ) : null}
+
+          {availableUpdate?.body && updatePhase === "available" ? (
+            <p className={styles.updateNotesClass}>{availableUpdate.body}</p>
+          ) : null}
+
+          {updatePhase === "downloading" && downloadProgress.contentLength > 0 ? (
+            <div
+              className={styles.updateProgressTrackClass}
+              aria-label={t.app.updateDownloading}
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={updateProgressPercent}
+            >
+              <span
+                className={styles.updateProgressBarClass}
+                style={{ width: `${updateProgressPercent}%` }}
+              />
+            </div>
+          ) : null}
+
+          <div className={styles.updateActionsClass}>
+            <button
+              type="button"
+              className={styles.cx(styles.secondaryActionClass, "px-2.5")}
+              onClick={() => checkForUpdates(true)}
+              disabled={isUpdateBusy}
+            >
+              <Icon name="refresh" />
+              {t.app.checkUpdates}
+            </button>
+            {availableUpdate && updatePhase === "available" ? (
+              <button
+                type="button"
+                className={styles.cx(styles.primaryActionClass, "px-2.5")}
+                onClick={installAvailableUpdate}
+                disabled={isUpdateBusy}
+              >
+                <Icon name="check" />
+                {t.app.installUpdate}
+              </button>
+            ) : null}
+          </div>
         </section>
 
         {featureFlags["settings.featureFlags"] ? (

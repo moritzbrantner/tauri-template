@@ -24,6 +24,7 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "createUpdaterArtifacts": true,
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -31,5 +32,16 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ]
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEQ2QjlCMEJBRkI5MjU0RTAKUldUZ1ZKTDd1ckM1MWxyNnZQQ3YwUy9nRUQ0QS9SV0lWWXdaUTV1M0xOcGR6WHJzT0VPQVZiVjUK",
+      "endpoints": [
+        "https://github.com/moritzbrantner/tauri-template/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
   }
 }
