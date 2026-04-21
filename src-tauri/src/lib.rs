@@ -259,6 +259,7 @@ fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
 }
 
+<<<<<<< HEAD
 #[tauri::command]
 fn load_settings(app: AppHandle) -> Result<AppSettings, String> {
     let path = settings_path(&app)?;
@@ -414,6 +415,18 @@ fn folder_watch_status(
     Ok(active_watch.as_ref().map(|watch| watch.status.clone()))
 }
 
+=======
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn greet_formats_the_name() {
+        assert_eq!(greet("Ada"), "Hello, Ada! You've been greeted from Rust!");
+    }
+}
+
+>>>>>>> 1e5cf3cce47309ac647b3bae55b8ffc2eabff0b9
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
