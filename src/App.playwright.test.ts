@@ -11,6 +11,7 @@ test("renders the RBAC workspace and approves an operator", async ({ page }) => 
   await page.getByRole("button", { name: "Open approval board" }).click();
 
   await expect(page.getByRole("heading", { name: "Approval board" })).toBeVisible();
+  await expect(page).toHaveURL("/?view=approvals");
 
   await page.getByLabel("Search reviewers").fill("Ada");
   await page.getByRole("button", { name: /Review Ada Lovelace/i }).click();
@@ -27,6 +28,7 @@ test("locks release handoff for requester role", async ({ page }) => {
   await page.getByRole("button", { name: "Requester" }).click();
   await page.getByRole("button", { name: "Open release handoff" }).click();
 
+  await expect(page).toHaveURL("/?view=handoff");
   await expect(page.getByText("Release handoff is locked")).toBeVisible();
   await expect(
     page.getByText(
@@ -37,7 +39,7 @@ test("locks release handoff for requester role", async ({ page }) => {
 });
 
 test("requires admin role to approve write scopes", async ({ page }) => {
-  await page.goto("/#access");
+  await page.goto("/?view=access");
 
   await expect(page.getByRole("heading", { name: "RBAC access plan" })).toBeVisible();
 
@@ -56,7 +58,7 @@ test("requires admin role to approve write scopes", async ({ page }) => {
 });
 
 test("stages a release bundle after a file is selected", async ({ page }) => {
-  await page.goto("/#handoff");
+  await page.goto("/?view=handoff");
 
   await expect(page.getByRole("heading", { name: "Release handoff" })).toBeVisible();
 
@@ -76,7 +78,7 @@ test("stages a release bundle after a file is selected", async ({ page }) => {
 });
 
 test("adds an audit note", async ({ page }) => {
-  await page.goto("/#audit");
+  await page.goto("/?view=audit");
 
   await expect(page.getByRole("heading", { name: "Audit trail" })).toBeVisible();
 

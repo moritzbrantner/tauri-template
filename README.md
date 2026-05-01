@@ -17,6 +17,8 @@ Tauri + React + TypeScript desktop scaffold inspired by `moritzbrantner/next-tem
 - `bun run test:unit` runs Vitest unit tests.
 - `bun run test:integration` runs Vitest integration tests.
 - `bun run test:e2e` builds the app and runs Playwright browser tests.
+- `bun playwright` starts the Playwright UI.
+- `bun storybook` starts the Storybook UI.
 - `bun run test` runs the unit, integration, and e2e suites.
 - `bun run test:rust` runs Cargo tests for the Tauri backend. On Linux, this requires the native Tauri/WebKit build dependencies to be installed.
 ## Local setup
