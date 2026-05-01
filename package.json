@@ -12,9 +12,15 @@
     "test:unit": "vitest run --config vitest.unit.config.ts",
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:e2e": "playwright test",
-    "test:rust": "cargo test --manifest-path src-tauri/Cargo.toml"
+    "test:rust": "cargo test --manifest-path src-tauri/Cargo.toml",
+    "verify:release-version": "node ./scripts/verify-release-version.mjs"
   },
   "dependencies": {
+    "@moritzbrantner/auth-contract": "file:../platform-packages/packages/auth-contract",
+    "@moritzbrantner/foundation-contract": "file:../platform-packages/packages/foundation-contract",
+    "@moritzbrantner/ui": "0.5.1",
+    "@moritzbrantner/upload-playbook": "file:../platform-packages/packages/upload-playbook",
+    "@tanstack/react-query": "^5.100.6",
     "@tauri-apps/api": "^2.10.1",
     "@tauri-apps/plugin-opener": "^2.5.3",
     "@tauri-apps/plugin-process": "^2.3.1",

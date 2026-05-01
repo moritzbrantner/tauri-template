@@ -30,3 +30,7 @@ export function getRuntimeInfo(): Promise<RuntimeInfo> {
 export function getAppPaths(): Promise<AppPaths> {
   return callBackend<AppPaths>("get_app_paths");
 }
+
+export function pingNativeBridge(name: string): Promise<string> {
+  return callBackend<string>("greet", { name });
+}

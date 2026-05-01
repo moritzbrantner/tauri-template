@@ -5,6 +5,12 @@ Tauri + React + TypeScript desktop scaffold inspired by `moritzbrantner/next-tem
 ## What is included
 
 - [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+- Tauri + React + TypeScript desktop scaffold.
+- RBAC-ready operator workspace using `@moritzbrantner/ui`.
+- Role switching for requester, operator, and admin permissions.
+- Intake, access review, approval board, release handoff, and audit trail examples.
+- Tauri backend command wrappers and Rust command modules for app info, settings, storage, jobs, uploads, notifications, diagnostics, secrets, files, workspace, folder watch, and updates.
+- Release workflow and signed updater artifact configuration. The frontend update prompt is not currently mounted in the active workspace.
 
 ## Testing
 
@@ -13,13 +19,6 @@ Tauri + React + TypeScript desktop scaffold inspired by `moritzbrantner/next-tem
 - `bun run test:e2e` builds the app and runs Playwright browser tests.
 - `bun run test` runs the unit, integration, and e2e suites.
 - `bun run test:rust` runs Cargo tests for the Tauri backend. On Linux, this requires the native Tauri/WebKit build dependencies to be installed.
-- Manifest-driven app metadata, pages, navigation, hotkeys, and feature flags.
-- Localized English/German messages.
-- Local settings for theme, language, and feature toggles.
-- Example accelerators for forms, mock REST-style tables, uploads, and notifications.
-- A Tauri bridge check on the About page using the starter `greet` command.
-- Signed self-updates from GitHub Releases through Tauri's updater plugin.
-
 ## Local setup
 
 ```bash
@@ -43,12 +42,11 @@ bun run build
 
 This runs TypeScript and the Vite production build.
 
-## Updates
+## Release Updates
 
-The app checks
-`https://github.com/moritzbrantner/tauri-template/releases/latest/download/latest.json`
-on startup. If a newer signed release is available, the right settings rail shows
-an install prompt and relaunches after the update is installed.
+The updater plugin is configured to read signed release metadata from
+`https://github.com/moritzbrantner/tauri-template/releases/latest/download/latest.json`.
+The active frontend workspace does not currently mount an update prompt.
 
 This repository has a generated updater public key in `src-tauri/tauri.conf.json`.
 The matching private key was generated at `~/.tauri/tauri-template.key` on this
@@ -59,5 +57,16 @@ repository secrets:
 - `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`: only needed if the key has a password.
 
 To publish an update, bump both `package.json` and `src-tauri/tauri.conf.json` to
-the new version, commit, and push a tag such as `v0.2.0`. The release workflow
-builds the installers, signs the updater artifacts, and uploads `latest.json`.
+the new version, keep `src-tauri/Cargo.toml` in sync, commit, and push a tag such
+as `v0.2.0`.
+
+```bash
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+The release workflow first verifies the tag matches all three version files, then
+runs the frontend build, unit tests, integration tests, Playwright e2e tests, and
+Rust tests on Ubuntu before packaging the desktop installers on Linux, macOS, and
+Windows. Successful builds are published to GitHub Releases with signed updater
+artifacts and `latest.json`.

@@ -1,3 +1,11 @@
-@import "tailwindcss";
+@import "@moritzbrantner/ui/styles.css";
 
-@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+}
