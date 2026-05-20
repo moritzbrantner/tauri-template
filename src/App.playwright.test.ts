@@ -88,3 +88,162 @@ test("adds an audit note", async ({ page }) => {
   await expect(page.getByText("Operator note added to the audit trail.")).toBeVisible();
   await expect(page.getByText("Ready for downstream QA.")).toBeVisible();
 });
+
+test("runs the browser-mocked demo task", async ({ page }) => {
+  await page.addInitScript(() => {
+    let callbackId = 0;
+    const callbacks = new Map<number, (event: unknown) => void>();
+    const listeners = new Map<number, string>();
+    const listenerHandlers = new Map<number, number>();
+    const jobs = new Map<string, Record<string, unknown>>();
+
+    window.__TAURI_EVENT_PLUGIN_INTERNALS__ = {
+      unregisterListener(_event: string, eventId: number) {
+        listeners.delete(eventId);
+        listenerHandlers.delete(eventId);
+      },
+    };
+
+    window.__TAURI_INTERNALS__ = {
+      callbacks,
+      convertFileSrc: (path: string) => `asset://${path}`,
+      invoke: async (command: string, args?: Record<string, unknown>) => {
+        if (command === "plugin:event|listen") {
+          const eventId = ++callbackId;
+          listeners.set(eventId, String(args?.event));
+          listenerHandlers.set(eventId, Number(args?.handler));
+          return eventId;
+        }
+
+        if (command === "list_jobs") {
+          return Array.from(jobs.values());
+        }
+
+        if (command === "clear_finished_jobs") {
+          let cleared = 0;
+          for (const [id, job] of jobs) {
+            if (["completed", "failed", "cancelled"].includes(String(job.status))) {
+              jobs.delete(id);
+              cleared += 1;
+            }
+          }
+          return cleared;
+        }
+
+        if (command === "cancel_job") {
+          const job = jobs.get(String(args?.jobId));
+          if (!job) {
+            return false;
+          }
+          job.status = "cancelled";
+          return true;
+        }
+
+        if (command === "check_system_dependencies") {
+          return {
+            dependencies: [
+              {
+                name: "git",
+                required: false,
+                available: true,
+                version: "git version mocked",
+                resolvedPath: "/usr/bin/git",
+              },
+            ],
+          };
+        }
+
+        if (command === "start_demo_task") {
+          const now = new Date().toISOString();
+          const job = {
+            id: "job-demo",
+            kind: "demo",
+            label: String(args?.label),
+            status: "running",
+            progress: 0,
+            createdAt: now,
+            updatedAt: now,
+          };
+          jobs.set(job.id, job);
+
+          window.setTimeout(() => {
+            const updatedAt = new Date().toISOString();
+            const progress = {
+              jobId: job.id,
+              label: job.label,
+              status: "running",
+              progress: 0.5,
+              message: "Processing 4/8",
+              updatedAt,
+            };
+            for (const [eventId, eventName] of listeners) {
+              if (eventName === "job://progress") {
+                const handlerId = listenerHandlers.get(eventId);
+                if (!handlerId) {
+                  continue;
+                }
+                callbacks.get(handlerId)?.({
+                  event: "job://progress",
+                  id: eventId,
+                  payload: progress,
+                  windowLabel: "main",
+                });
+              }
+            }
+          }, 50);
+
+          return job;
+        }
+
+        return null;
+      },
+      transformCallback: (callback: (event: unknown) => void) => {
+        const id = ++callbackId;
+        callbacks.set(id, callback);
+        return id;
+      },
+      unregisterCallback: (id: number) => {
+        callbacks.delete(id);
+      },
+    };
+  });
+
+  await page.goto("/");
+  await page.getByRole("button", { name: "Start task" }).click();
+
+  await expect(page.getByText("Processing 4/8")).toBeVisible();
+});
+
+test("changes the color mode setting to dark without changing the routed view", async ({
+  page,
+}) => {
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.goto("/?view=audit");
+
+  const colorModeSwitch = page.getByRole("switch", { name: "Color mode" });
+
+  await expect(page.getByRole("heading", { name: "Audit trail" })).toBeVisible();
+  await expect(colorModeSwitch).toHaveAttribute("aria-checked", "false");
+  await expect(page.locator("html")).not.toHaveClass(/dark/);
+
+  await colorModeSwitch.click();
+
+  await expect(colorModeSwitch).toHaveAttribute("aria-checked", "true");
+  await expect(page.locator("html")).toHaveClass(/dark/);
+  await expect(page).toHaveURL("/?view=audit");
+});
+
+test("changes the color mode setting back to light", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.goto("/");
+
+  const colorModeSwitch = page.getByRole("switch", { name: "Color mode" });
+
+  await expect(colorModeSwitch).toHaveAttribute("aria-checked", "true");
+  await expect(page.locator("html")).toHaveClass(/dark/);
+
+  await colorModeSwitch.click();
+
+  await expect(colorModeSwitch).toHaveAttribute("aria-checked", "false");
+  await expect(page.locator("html")).not.toHaveClass(/dark/);
+});

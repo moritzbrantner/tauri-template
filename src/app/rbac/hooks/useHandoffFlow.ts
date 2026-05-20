@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { ChangeEvent } from "react";
+import { pickFiles } from "../../backend/dialogs";
 import type { Permission, UploadItem } from "../types";
 
 type PermissionCheck = (permission: Permission) => boolean;
@@ -38,6 +39,48 @@ export function useHandoffFlow(hasPermission: PermissionCheck, enqueueAudit: Aud
     }
   }
 
+  async function pickNativeFiles() {
+    if (!hasPermission("artifacts.write")) {
+      setHandoffNotice("Adding release files requires artifacts.write.");
+      return;
+    }
+
+    try {
+      const paths = await pickFiles({
+        title: "Choose release artifacts",
+        filters: [
+          {
+            name: "Release artifacts",
+            extensions: ["json", "txt", "md", "zip", "dmg", "msi", "AppImage", "png", "jpg", "jpeg"],
+          },
+        ],
+      });
+
+      const nextFiles = paths.map((path) => {
+        const pathSegments = path.split(/[\\/]/).filter(Boolean);
+        const name = pathSegments[pathSegments.length - 1] ?? path;
+        return {
+          id: `native-${path}`,
+          localPath: path,
+          name,
+          size: 0,
+          type: "local file",
+        } satisfies UploadItem;
+      });
+
+      if (nextFiles.length === 0) {
+        return;
+      }
+
+      setQueuedFiles((current) =>
+        Array.from(new Map([...current, ...nextFiles].map((file) => [file.id, file])).values()),
+      );
+      setHandoffNotice("");
+    } catch (error) {
+      setHandoffNotice(error instanceof Error ? error.message : String(error));
+    }
+  }
+
   function stageHandoff() {
     if (!hasPermission("artifacts.write")) {
       setHandoffNotice("Staging the release package requires artifacts.write.");
@@ -60,9 +103,9 @@ export function useHandoffFlow(hasPermission: PermissionCheck, enqueueAudit: Aud
     handleFileInput,
     handoffNotice,
     handoffProgress,
+    pickNativeFiles,
     queuedFiles,
     setQueuedFiles,
     stageHandoff,
   };
 }
-

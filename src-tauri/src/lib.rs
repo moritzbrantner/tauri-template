@@ -1,4 +1,5 @@
 mod app_info;
+mod dependencies;
 mod diagnostics;
 mod errors;
 mod files;
@@ -35,6 +36,7 @@ pub fn run() {
         .manage(uploads::UploadState::default())
         .manage(workspace::WorkspaceState::default())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
@@ -69,6 +71,7 @@ pub fn run() {
             files::calculate_file_hash,
             files::cleanup_temp_files,
             jobs::start_job,
+            jobs::start_demo_task,
             jobs::cancel_job,
             jobs::job_status,
             jobs::list_jobs,
@@ -91,6 +94,7 @@ pub fn run() {
             folder_watch::folder_watch_status,
             folder_watch::list_folder_watch_events,
             folder_watch::clear_folder_watch_events,
+            dependencies::check_system_dependencies,
             updates::check_update_status,
             updates::restart_app,
             diagnostics::health_check,

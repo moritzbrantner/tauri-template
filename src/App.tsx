@@ -14,6 +14,7 @@ import { HandoffView } from "./app/rbac/views/HandoffView";
 import { IntakeView } from "./app/rbac/views/IntakeView";
 import { LockedView } from "./app/rbac/views/LockedView";
 import { OverviewView } from "./app/rbac/views/OverviewView";
+import { UpdateStatusButton } from "./app/updates/UpdateStatusButton";
 import { LoginPage } from "./pages/auth/LoginPage";
 import { PasswordForgottenPage } from "./pages/auth/PasswordForgottenPage";
 import { RegisterPage } from "./pages/auth/RegisterPage";
@@ -64,6 +65,7 @@ function App() {
             groups={navigationGroups}
             actions={
               <div className="hidden items-center gap-2 lg:flex">
+                <UpdateStatusButton />
                 <Badge variant="outline">{activeMeta.eyebrow}</Badge>
                 <Badge variant="secondary">{flow.currentRole.label}</Badge>
               </div>
@@ -162,6 +164,7 @@ function App() {
                 handoffProgress={flow.handoffProgress}
                 onClearFiles={() => flow.setQueuedFiles([])}
                 onFileInput={flow.handleFileInput}
+                onNativePick={flow.pickNativeFiles}
                 onStageHandoff={flow.stageHandoff}
                 queuedFiles={flow.queuedFiles}
               />

@@ -38,6 +38,7 @@ export type WorkspaceDraft = {
 
 export type UploadItem = {
   id: string;
+  localPath?: string;
   name: string;
   size: number;
   type: string;
@@ -77,4 +78,3 @@ export type RoleSpec = {
 };
 
 export type Employee = (typeof employees)[number];
-

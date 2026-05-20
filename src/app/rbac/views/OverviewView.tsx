@@ -1,4 +1,6 @@
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@moritzbrantner/ui";
+import { SystemDependencyCard } from "../../dependencies/SystemDependencyCard";
+import { DemoTaskPanel } from "../../jobs/DemoTaskPanel";
 import { MetricCard } from "../components/MetricCard";
 import { SnapshotRow } from "../components/SnapshotRow";
 import type { RoleSpec, ViewId } from "../types";
@@ -71,7 +73,8 @@ export function OverviewView({
           <SnapshotRow label="Unread audit events" value={String(unreadAuditCount)} />
         </CardContent>
       </Card>
+      <DemoTaskPanel />
+      <SystemDependencyCard />
     </section>
   );
 }
-

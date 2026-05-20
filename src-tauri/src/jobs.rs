@@ -21,6 +21,7 @@ pub struct JobState(pub Mutex<HashMap<String, Job>>);
 pub struct Job {
     pub id: String,
     pub kind: String,
+    pub label: String,
     pub status: String,
     pub progress: f32,
     pub message: Option<String>,
@@ -30,15 +31,30 @@ pub struct Job {
 
 pub type JobStatus = Job;
 
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct JobProgressEvent {
+    pub id: String,
+    pub job_id: String,
+    pub kind: String,
+    pub label: String,
+    pub status: String,
+    pub progress: f32,
+    pub message: String,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
 fn now() -> String {
     Utc::now().to_rfc3339()
 }
 
-fn make_job(kind: String) -> Job {
+fn make_job(kind: String, label: String) -> Job {
     let timestamp = now();
     Job {
         id: Uuid::new_v4().to_string(),
         kind,
+        label,
         status: "queued".into(),
         progress: 0.0,
         message: None,
@@ -48,8 +64,30 @@ fn make_job(kind: String) -> Job {
 }
 
 fn emit_job(app: &AppHandle, event: &str, job: &Job) {
-    if let Err(error) = app.emit(event, job) {
+    let result = if event == JOB_PROGRESS_EVENT {
+        app.emit(event, JobProgressEvent::from(job))
+    } else {
+        app.emit(event, job)
+    };
+
+    if let Err(error) = result {
         eprintln!("Could not emit job event `{event}`: {error}");
+    }
+}
+
+impl From<&Job> for JobProgressEvent {
+    fn from(job: &Job) -> Self {
+        Self {
+            id: job.id.clone(),
+            job_id: job.id.clone(),
+            kind: job.kind.clone(),
+            label: job.label.clone(),
+            status: job.status.clone(),
+            progress: job.progress,
+            message: job.message.clone().unwrap_or_else(|| job.status.clone()),
+            created_at: job.created_at.clone(),
+            updated_at: job.updated_at.clone(),
+        }
     }
 }
 
@@ -77,10 +115,26 @@ pub fn create_background_job(
     kind: String,
     payload: Value,
 ) -> CommandResult<Job> {
+    create_background_job_with_options(app, state, kind, None, payload, 10, 80)
+}
+
+fn create_background_job_with_options(
+    app: AppHandle,
+    state: &JobState,
+    kind: String,
+    label: Option<String>,
+    payload: Value,
+    steps: u32,
+    step_delay_ms: u64,
+) -> CommandResult<Job> {
     if kind.trim().is_empty() {
         return Err(AppError::validation("Job kind cannot be empty."));
     }
-    let mut job = make_job(kind.trim().into());
+    let steps = steps.clamp(1, 100);
+    let label = label
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or_else(|| kind.trim().into());
+    let mut job = make_job(kind.trim().into(), label);
     job.status = "running".into();
     job.message = payload
         .get("message")
@@ -95,8 +149,8 @@ pub fn create_background_job(
     let job_id = job.id.clone();
     let app_handle = app.clone();
     tauri::async_runtime::spawn_blocking(move || {
-        for step in 1..=10 {
-            thread::sleep(Duration::from_millis(80));
+        for step in 1..=steps {
+            thread::sleep(Duration::from_millis(step_delay_ms));
             let state = app_handle.state::<JobState>();
             let current_status = {
                 let jobs = match state.0.lock() {
@@ -108,6 +162,7 @@ pub fn create_background_job(
             if current_status.as_deref() == Some("cancelled") {
                 if let Ok(job) = set_job_status(&state, &job_id, "cancelled", 0.0, None) {
                     emit_job(&app_handle, JOB_CANCELLED_EVENT, &job);
+                    emit_job(&app_handle, JOB_PROGRESS_EVENT, &job);
                 }
                 return;
             }
@@ -115,8 +170,8 @@ pub fn create_background_job(
                 &state,
                 &job_id,
                 "running",
-                step as f32 / 10.0,
-                Some(format!("Processing {step}/10")),
+                step as f32 / steps as f32,
+                Some(format!("Processing {step}/{steps}")),
             ) {
                 Ok(job) => emit_job(&app_handle, JOB_PROGRESS_EVENT, &job),
                 Err(_) => return,
@@ -133,13 +188,31 @@ pub fn create_background_job(
 
 #[cfg(test)]
 pub fn complete_job_for_test(state: &JobState, kind: &str) -> CommandResult<Job> {
-    let mut job = make_job(kind.into());
+    let mut job = make_job(kind.into(), kind.into());
     job.status = "started".into();
     {
         let mut jobs = state.0.lock().map_err(|_| lock_error("Job"))?;
         jobs.insert(job.id.clone(), job.clone());
     }
     set_job_status(state, &job.id, "completed", 1.0, None)
+}
+
+#[tauri::command]
+pub fn start_demo_task(
+    app: AppHandle,
+    state: State<'_, JobState>,
+    label: String,
+    steps: Option<u32>,
+) -> CommandResult<Job> {
+    create_background_job_with_options(
+        app,
+        &state,
+        "demo".into(),
+        Some(label),
+        Value::Null,
+        steps.unwrap_or(10),
+        150,
+    )
 }
 
 #[tauri::command]
@@ -223,6 +296,22 @@ mod tests {
 
         assert_eq!(job.status, "completed");
         assert_eq!(job.progress, 1.0);
+    }
+
+    #[test]
+    fn progress_event_contains_stable_task_fields() {
+        let mut job = make_job("demo".into(), "Demo task".into());
+        job.status = "running".into();
+        job.progress = 0.5;
+        job.message = Some("Processing 1/2".into());
+
+        let event = JobProgressEvent::from(&job);
+
+        assert_eq!(event.job_id, job.id);
+        assert_eq!(event.label, "Demo task");
+        assert_eq!(event.status, "running");
+        assert_eq!(event.progress, 0.5);
+        assert_eq!(event.message, "Processing 1/2");
     }
 
     #[test]

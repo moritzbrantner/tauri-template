@@ -12,6 +12,7 @@ export const jobEvents = {
 export type Job = {
   id: string;
   kind: string;
+  label?: string;
   status: string;
   progress: number;
   message?: string | null;
@@ -19,8 +20,21 @@ export type Job = {
   updatedAt: string;
 };
 
+export type JobProgressEvent = {
+  jobId: string;
+  label: string;
+  status: "queued" | "running" | "completed" | "failed" | "cancelled";
+  progress: number;
+  message: string;
+  updatedAt: string;
+};
+
 export function startJob(kind: string, payload: unknown): Promise<Job> {
   return callBackend<Job>("start_job", { kind, payload });
+}
+
+export function startDemoTask(label: string, steps?: number): Promise<Job> {
+  return callBackend<Job>("start_demo_task", { label, steps });
 }
 
 export function cancelJob(jobId: string): Promise<boolean> {
@@ -41,4 +55,20 @@ export function clearFinishedJobs(): Promise<number> {
 
 export function onJobProgress(handler: (job: Job) => void): Promise<UnlistenFn> {
   return listen<Job>(jobEvents.progress, (event) => handler(event.payload));
+}
+
+export function listenToJobProgress(
+  handler: (event: JobProgressEvent) => void,
+): Promise<UnlistenFn> {
+  return listen<JobProgressEvent>(jobEvents.progress, (event) => {
+    const payload = event.payload;
+    handler({
+      jobId: payload.jobId,
+      label: payload.label,
+      message: payload.message,
+      progress: payload.progress,
+      status: payload.status,
+      updatedAt: payload.updatedAt,
+    });
+  });
 }
