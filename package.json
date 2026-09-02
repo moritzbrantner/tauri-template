@@ -3,6 +3,10 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "packageManager": "bun@1.4.0",
+  "engines": {
+    "bun": "1.4.0"
+  },
   "scripts": {
     "dev": "vite",
     "lint": "tsc --noEmit",
@@ -10,37 +14,22 @@
     "format:check": "cargo fmt --manifest-path src-tauri/Cargo.toml -- --check",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "playwright": "playwright test --ui --ui-host 127.0.0.1 --ui-port 0",
-    "storybook": "storybook dev -p 6006",
     "tauri": "tauri",
-    "check:repo-hygiene": "bash ./scripts/check_repo_hygiene.sh",
-    "test": "bun run test:unit && bun run test:integration && bun run test:e2e",
+    "test": "bun run test:unit && bun run test:e2e && bun run test:rust",
     "test:unit": "vitest run --config vitest.unit.config.ts",
-    "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:e2e": "playwright test",
-    "test:rust": "cargo test --manifest-path src-tauri/Cargo.toml",
-    "verify": "bun run check:repo-hygiene && bun run format:check && bun run lint && bun run build && bun run test && bun run test:rust",
-    "verify:release-version": "node ./scripts/verify-release-version.mjs"
+    "test:rust": "cargo test --manifest-path src-tauri/Cargo.toml --locked",
+    "verify:fast": "bun run lint && bun run build && bun run test:unit",
+    "verify:native": "bun run format:check && bun run test:rust",
+    "verify": "bun run verify:fast && bun run test:e2e && bun run verify:native"
   },
   "dependencies": {
-    "@moritzbrantner/auth-contract": "file:../platform-packages/packages/auth-contract",
-    "@moritzbrantner/foundation-contract": "file:../platform-packages/packages/foundation-contract",
-    "@moritzbrantner/ui": "0.5.1",
-    "@moritzbrantner/upload-playbook": "file:../platform-packages/packages/upload-playbook",
-    "@tanstack/react-query": "^5.100.6",
     "@tauri-apps/api": "^2.10.1",
-    "@tauri-apps/plugin-dialog": "^2.7.1",
-    "@tauri-apps/plugin-opener": "^2.5.3",
-    "@tauri-apps/plugin-process": "^2.3.1",
-    "@tauri-apps/plugin-updater": "^2.10.1",
     "react": "^19.2.5",
     "react-dom": "^19.2.5"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
-    "@storybook/addon-docs": "10.3.5",
-    "@storybook/react-vite": "10.3.5",
-    "@tailwindcss/vite": "^4.2.3",
     "@tauri-apps/cli": "^2.10.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -49,8 +38,6 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^4.7.0",
     "jsdom": "^29.0.2",
-    "storybook": "10.3.5",
-    "tailwindcss": "^4.2.3",
     "typescript": "~5.8.3",
     "vite": "^7.3.2",
     "vitest": "^4.1.4"

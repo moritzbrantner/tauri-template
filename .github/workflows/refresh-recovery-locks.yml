@@ -1,0 +1,44 @@
+name: refresh-recovery-locks
+
+on:
+  push:
+    branches:
+      - recover/tauri2-template-boundary
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: recover/tauri2-template-boundary
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Refresh JavaScript lockfile
+        run: bun install
+
+      - name: Refresh Rust lockfile
+        run: cargo generate-lockfile --manifest-path src-tauri/Cargo.toml
+
+      - name: Verify portable baseline
+        run: bun run verify:fast
+
+      - name: Commit regenerated locks
+        shell: bash
+        run: |
+          if git diff --quiet -- bun.lock src-tauri/Cargo.lock; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add bun.lock src-tauri/Cargo.lock
+          git commit -m "chore: refresh recovery lockfiles"
+          git push origin HEAD:recover/tauri2-template-boundary
