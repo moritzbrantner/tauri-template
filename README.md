@@ -21,9 +21,11 @@ The template keeps the default application self-contained. It does not require s
 
 Keep three layers distinct:
 
-1. **Application/domain logic** should be framework-independent whenever practical. Prefer pure Rust crates for reusable native computation and plain TypeScript modules for portable frontend logic.
-2. **Tauri adapters** should stay thin: commands, events, plugin setup, capability declarations, and OS integration belong at this boundary.
-3. **React UI** talks to native behavior through small typed adapter modules such as `src/greet.ts`, not by scattering `invoke()` calls through components.
+1. **Application/domain logic** stays framework-independent whenever practical. `src-tauri/crates/app-core` is the starter seam for reusable pure Rust code and has no Tauri dependency.
+2. **Tauri adapters** stay thin. `src-tauri/src` composes the application and translates commands/events/plugins into calls on reusable logic.
+3. **React UI** talks to native behavior through typed modules under `src/platform/tauri`, not by scattering `invoke()` calls through components.
+
+The starter `greet` flow intentionally crosses all three layers: React calls `src/platform/tauri/greet.ts`, the Tauri command delegates immediately, and `app-core` owns the framework-independent behavior. New reusable Rust packages should depend on domain concerns rather than on Tauri whenever possible.
 
 The default template intentionally contains only one command. Storage, filesystem access, folder watching, secrets, updater support, background jobs, notifications, tray integration, sidecars, and similar features should be added as explicit capabilities when an application needs them.
 
@@ -95,8 +97,9 @@ When adding a Tauri plugin or custom native feature:
 2. initialize it in the Tauri adapter layer;
 3. grant only the permissions required by the windows or webviews that use it;
 4. expose a typed frontend adapter;
-5. test portable logic without requiring a window where possible;
-6. add native integration coverage when behavior depends on the OS or Tauri runtime.
+5. keep reusable/domain computation below that adapter when practical;
+6. test portable logic without requiring a window where possible;
+7. add native integration coverage when behavior depends on the OS or Tauri runtime.
 
 Do not turn optional application features back into default template baggage.
 
