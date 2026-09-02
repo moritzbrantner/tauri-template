@@ -59,9 +59,6 @@ jobs:
       - name: Verify installed convention snapshot
         run: bun "$RUNNER_TEMP/coding-tooling/src/entry.ts" conventions check --root "$GITHUB_WORKSPACE"
 
-      - name: Verify fast package tier
-        run: bun "$RUNNER_TEMP/coding-tooling/src/entry.ts" run --tier fast --component tauri-template --strict
-
       - name: Commit generated foundation state
         shell: bash
         run: |
@@ -73,3 +70,6 @@ jobs:
           git add -A
           git commit -m "foundation: materialize deterministic policy state"
           git push origin HEAD:recover/deterministic-foundation
+
+      - name: Verify fast package tier
+        run: bun "$RUNNER_TEMP/coding-tooling/src/entry.ts" run --tier fast --component tauri-template --strict
