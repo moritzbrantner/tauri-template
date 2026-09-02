@@ -16,9 +16,7 @@ describe("greet", () => {
   it("invokes the Tauri greet command with the provided name", async () => {
     mockedInvoke.mockResolvedValue("Hello, Ada! You've been greeted from Rust!");
 
-    await expect(greet("Ada")).resolves.toBe(
-      "Hello, Ada! You've been greeted from Rust!",
-    );
+    await expect(greet("Ada")).resolves.toBe("Hello, Ada! You've been greeted from Rust!");
 
     expect(mockedInvoke).toHaveBeenCalledWith("greet", { name: "Ada" });
   });

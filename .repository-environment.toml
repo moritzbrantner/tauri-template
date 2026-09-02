@@ -1,0 +1,29 @@
+schema_version = 1
+
+[policy]
+track = "latest-stable"
+
+[system]
+apt = [
+  "libwebkit2gtk-4.1-dev",
+  "libappindicator3-dev",
+  "librsvg2-dev",
+  "patchelf",
+]
+
+[setup]
+commands = [
+  "bun install --frozen-lockfile",
+  "cargo fetch --manifest-path src-tauri/Cargo.toml --locked",
+]
+
+[maintenance]
+commands = [
+  "bun install --frozen-lockfile",
+  "cargo fetch --manifest-path src-tauri/Cargo.toml --locked",
+]
+
+[cache]
+paths = ["~/.bun/install/cache", "~/.cargo", "src-tauri/target"]
+
+[compatibility_holds]

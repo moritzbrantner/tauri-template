@@ -23,6 +23,22 @@
 - Do not add mandatory dependencies on sibling repositories or unpublished local packages.
 - Optional examples belong in recipes/examples, not in the default runtime.
 
+## Environment
+
+- `package.json#packageManager` is the exact Bun pin.
+- `rust-toolchain.toml` is the exact Rust pin.
+- `.repository-environment.toml` declares non-native environment requirements such as Linux Tauri packages.
+- `scripts/codex-environment.sh` is the stable setup/maintenance entrypoint.
+- Run `bash scripts/codex-environment.sh setup` on a fresh environment and `maintenance` after dependency-state changes.
+- Do not silently replace exact pins with moving `latest`, `stable`, or major-version aliases.
+
+## Conventions
+
+- `conventions.json`, `conventions.lock.json`, and `.conventions/` are managed policy state.
+- Do not hand-edit vendored convention files. Refresh them through `coding-tooling` against an explicit convention-registry revision.
+- `.coding-tooling.json` defines repository validation tiers and capability expectations.
+- Keep test execution kinds explicit in filenames; Vitest unit tests use `.unit.test.*`, while Playwright uses its own non-Vitest suffix.
+
 ## Validation
 
 Use the narrowest useful tier while iterating:
@@ -33,6 +49,12 @@ bun run verify:native
 bun run verify
 ```
 
+Before treating a template-level change as complete, also validate a clean copied instance:
+
+```bash
+bun run template:smoke
+```
+
 Browser Playwright coverage is not evidence that native Tauri/OS behavior works. Add an explicit native integration test when a change depends on windows, plugins, filesystem permissions, platform APIs, or packaging.
 
 ## Dependency policy
@@ -40,6 +62,7 @@ Browser Playwright coverage is not evidence that native Tauri/OS behavior works.
 - Keep Bun and Rust toolchains pinned by repository-native files.
 - Keep `bun.lock` and `src-tauri/Cargo.lock` committed.
 - Use locked installs/checks in automation.
+- Use Oxfmt/Oxlint for frontend formatting/linting and Cargo fmt/Clippy for Rust.
 - Let the shared Renovate policy update dependency pins rather than adding ad-hoc updater configuration.
 
 ## Template discipline

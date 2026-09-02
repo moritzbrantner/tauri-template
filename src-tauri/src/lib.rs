@@ -3,6 +3,14 @@ fn greet(name: &str) -> String {
     format!("Hello, {name}! You've been greeted from Rust!")
 }
 
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
+pub fn run() {
+    tauri::Builder::default()
+        .invoke_handler(tauri::generate_handler![greet])
+        .run(tauri::generate_context!())
+        .expect("error while running Tauri application");
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -11,12 +19,4 @@ mod tests {
     fn greet_formats_the_name() {
         assert_eq!(greet("Ada"), "Hello, Ada! You've been greeted from Rust!");
     }
-}
-
-#[cfg_attr(mobile, tauri::mobile_entry_point)]
-pub fn run() {
-    tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![greet])
-        .run(tauri::generate_context!())
-        .expect("error while running Tauri application");
 }

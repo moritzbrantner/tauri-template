@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "ruleId": "TEMPLATE-003",
+  "enforcement": {
+    "kind": "capability",
+    "capability": "template:smoke",
+    "tiers": ["full"]
+  }
+}
