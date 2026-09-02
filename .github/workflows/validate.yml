@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - main
+      - recover/deterministic-foundation
   workflow_dispatch:
 
 permissions:
