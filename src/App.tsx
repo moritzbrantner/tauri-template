@@ -1,5 +1,5 @@
 import { FormEvent, useState } from "react";
-import { greet } from "./greet";
+import { greet } from "./platform/tauri/greet";
 import "./App.css";
 
 export default function App() {
