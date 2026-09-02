@@ -20,10 +20,18 @@ describe("template initializer", () => {
   });
 
   it("rejects ambiguous package names and identifiers", () => {
-    expect(() => validatePackageName("Media_Workbench")).toThrow();
-    expect(() => validatePackageName("-media")).toThrow();
-    expect(() => validateIdentifier("media-workbench")).toThrow();
-    expect(() => validateIdentifier("com.example._media")).toThrow();
+    expect(() => validatePackageName("Media_Workbench")).toThrow(
+      "--name must be 1-64 lowercase ASCII letters, digits, or internal hyphens",
+    );
+    expect(() => validatePackageName("-media")).toThrow(
+      "--name must be 1-64 lowercase ASCII letters, digits, or internal hyphens",
+    );
+    expect(() => validateIdentifier("media-workbench")).toThrow(
+      "--identifier must use reverse-domain-like non-empty segments without leading/trailing hyphens",
+    );
+    expect(() => validateIdentifier("com.example._media")).toThrow(
+      "--identifier may contain only ASCII letters, digits, hyphens, and periods",
+    );
   });
 
   it("parses explicit product identity", () => {
