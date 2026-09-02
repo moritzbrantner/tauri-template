@@ -7,9 +7,7 @@ const TEMPLATE_LIB_NAME = "tauri_template_lib";
 
 export function validatePackageName(value) {
   if (!/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(value) || value.length > 64) {
-    throw new Error(
-      "--name must be 1-64 lowercase ASCII letters, digits, or internal hyphens",
-    );
+    throw new Error("--name must be 1-64 lowercase ASCII letters, digits, or internal hyphens");
   }
   return value;
 }
@@ -20,7 +18,10 @@ export function validateIdentifier(value) {
   }
 
   const segments = value.split(".");
-  if (segments.length < 2 || segments.some((segment) => !/^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$/.test(segment))) {
+  if (
+    segments.length < 2 ||
+    segments.some((segment) => !/^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$/.test(segment))
+  ) {
     throw new Error(
       "--identifier must use reverse-domain-like non-empty segments without leading/trailing hyphens",
     );
@@ -130,13 +131,28 @@ export async function initializeTemplate(root, options) {
 
   const cargoTomlPath = "src-tauri/Cargo.toml";
   let cargoToml = await read(root, cargoTomlPath);
-  cargoToml = replaceExactlyOnce(cargoToml, `name = "${TEMPLATE_NAME}"`, `name = "${name}"`, cargoTomlPath);
-  cargoToml = replaceExactlyOnce(cargoToml, `name = "${TEMPLATE_LIB_NAME}"`, `name = "${libName}"`, cargoTomlPath);
+  cargoToml = replaceExactlyOnce(
+    cargoToml,
+    `name = "${TEMPLATE_NAME}"`,
+    `name = "${name}"`,
+    cargoTomlPath,
+  );
+  cargoToml = replaceExactlyOnce(
+    cargoToml,
+    `name = "${TEMPLATE_LIB_NAME}"`,
+    `name = "${libName}"`,
+    cargoTomlPath,
+  );
   await write(root, cargoTomlPath, cargoToml);
 
   const mainRsPath = "src-tauri/src/main.rs";
   let mainRs = await read(root, mainRsPath);
-  mainRs = replaceExactlyOnce(mainRs, `${TEMPLATE_LIB_NAME}::run()`, `${libName}::run()`, mainRsPath);
+  mainRs = replaceExactlyOnce(
+    mainRs,
+    `${TEMPLATE_LIB_NAME}::run()`,
+    `${libName}::run()`,
+    mainRsPath,
+  );
   await write(root, mainRsPath, mainRs);
 
   const cargoLockPath = "src-tauri/Cargo.lock";
@@ -151,17 +167,32 @@ export async function initializeTemplate(root, options) {
 
   const bunLockPath = "bun.lock";
   let bunLock = await read(root, bunLockPath);
-  bunLock = replaceExactlyOnce(bunLock, `"name": "${TEMPLATE_NAME}"`, `"name": "${name}"`, bunLockPath);
+  bunLock = replaceExactlyOnce(
+    bunLock,
+    `"name": "${TEMPLATE_NAME}"`,
+    `"name": "${name}"`,
+    bunLockPath,
+  );
   await write(root, bunLockPath, bunLock);
 
   const indexPath = "index.html";
   let indexHtml = await read(root, indexPath);
-  indexHtml = replaceExactlyOnce(indexHtml, `<title>${TEMPLATE_NAME}</title>`, `<title>${title}</title>`, indexPath);
+  indexHtml = replaceExactlyOnce(
+    indexHtml,
+    `<title>${TEMPLATE_NAME}</title>`,
+    `<title>${title}</title>`,
+    indexPath,
+  );
   await write(root, indexPath, indexHtml);
 
   const workflowPath = ".github/workflows/validate.yml";
   let workflow = await read(root, workflowPath);
-  workflow = replaceExactlyOnce(workflow, `component: ${TEMPLATE_NAME}`, `component: ${name}`, workflowPath);
+  workflow = replaceExactlyOnce(
+    workflow,
+    `component: ${TEMPLATE_NAME}`,
+    `component: ${name}`,
+    workflowPath,
+  );
   await write(root, workflowPath, workflow);
 
   const readmePath = "README.md";

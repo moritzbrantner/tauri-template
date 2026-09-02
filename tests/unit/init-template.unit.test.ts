@@ -14,9 +14,7 @@ describe("template initializer", () => {
   });
 
   it("accepts a Tauri-compatible reverse-domain identifier", () => {
-    expect(validateIdentifier("com.example.media-workbench")).toBe(
-      "com.example.media-workbench",
-    );
+    expect(validateIdentifier("com.example.media-workbench")).toBe("com.example.media-workbench");
   });
 
   it("rejects ambiguous package names and identifiers", () => {
