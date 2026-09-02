@@ -20,6 +20,6 @@
     "skipLibCheck": true
   },
   "include": ["src"],
-  "exclude": ["src/**/*.playwright.test.ts"],
+  "exclude": ["src/**/*.playwright.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
