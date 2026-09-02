@@ -5,7 +5,7 @@ const baseURL = `http://127.0.0.1:${port}`;
 
 export default defineConfig({
   testDir: "./src",
-  testMatch: "**/*.playwright.test.ts",
+  testMatch: "**/*.playwright.ts",
   fullyParallel: true,
   reporter: "list",
   use: {
