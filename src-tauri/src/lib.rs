@@ -1,16 +1,6 @@
 #[tauri::command]
 fn greet(name: &str) -> String {
-    format!("Hello, {name}! You've been greeted from Rust!")
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn greet_formats_the_name() {
-        assert_eq!(greet("Ada"), "Hello, Ada! You've been greeted from Rust!");
-    }
+    app_core::greeting(name)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
