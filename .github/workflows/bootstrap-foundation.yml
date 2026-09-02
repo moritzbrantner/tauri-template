@@ -1,0 +1,75 @@
+name: bootstrap-foundation
+
+on:
+  push:
+    branches:
+      - recover/deterministic-foundation
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: recover/deterministic-foundation
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
+        with:
+          bun-version: 1.4.0
+
+      - name: Check out pinned foundation tooling
+        shell: bash
+        run: |
+          git clone --filter=blob:none https://github.com/moritzbrantner/coding-tooling.git "$RUNNER_TEMP/coding-tooling"
+          git -C "$RUNNER_TEMP/coding-tooling" checkout 4524918dc26ad9eec85df43c7c11fb08aca6d054
+          git clone --filter=blob:none https://github.com/moritzbrantner/coding-agent-conventions.git "$RUNNER_TEMP/coding-agent-conventions"
+          git -C "$RUNNER_TEMP/coding-agent-conventions" checkout 8965e9274ec214146bfb18ed9ca1f8586b0617b8
+          bun install --cwd "$RUNNER_TEMP/coding-tooling" --frozen-lockfile
+
+      - name: Install repository conventions
+        shell: bash
+        run: |
+          bun "$RUNNER_TEMP/coding-tooling/src/entry.ts" conventions init \
+            dependencies \
+            environment \
+            git \
+            template-authoring \
+            react \
+            rust \
+            testing-library \
+            tooling \
+            vite \
+            vitest \
+            playwright \
+            ui \
+            --root "$GITHUB_WORKSPACE" \
+            --conventions-root "$RUNNER_TEMP/coding-agent-conventions"
+
+      - name: Refresh locked frontend dependencies
+        run: bun install
+
+      - name: Format deterministic frontend files
+        run: bun run format
+
+      - name: Verify installed convention snapshot
+        run: bun "$RUNNER_TEMP/coding-tooling/src/entry.ts" conventions check --root "$GITHUB_WORKSPACE"
+
+      - name: Verify fast package tier
+        run: bun "$RUNNER_TEMP/coding-tooling/src/entry.ts" run --tier fast --component tauri-template --strict
+
+      - name: Commit generated foundation state
+        shell: bash
+        run: |
+          if git diff --quiet && [[ -z "$(git status --porcelain)" ]]; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "foundation: materialize deterministic policy state"
+          git push origin HEAD:recover/deterministic-foundation
