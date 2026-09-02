@@ -1,12 +1,8 @@
 {
   "name": "tauri-template",
-  "private": true,
   "version": "0.1.0",
+  "private": true,
   "type": "module",
-  "packageManager": "bun@1.4.0",
-  "engines": {
-    "bun": "1.4.0"
-  },
   "scripts": {
     "dev": "vite",
     "format": "oxfmt src tests package.json tsconfig.json tsconfig.node.json vite.config.ts vitest.unit.config.ts playwright.config.ts .coding-tooling.json conventions.json",
@@ -49,5 +45,9 @@
     "typescript": "~5.8.3",
     "vite": "^7.3.2",
     "vitest": "^4.1.4"
-  }
+  },
+  "engines": {
+    "bun": "1.4.0"
+  },
+  "packageManager": "bun@1.4.0"
 }
