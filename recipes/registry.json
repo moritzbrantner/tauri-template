@@ -1,45 +1,98 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "recipes": [
     {
       "id": "folder-watch",
       "title": "Scoped folder watching",
       "path": "recipes/folder-watch",
       "kind": "official-plugin",
-      "nativeDependencies": ["tauri-plugin-fs@2 with watch feature"],
-      "frontendDependencies": ["@tauri-apps/plugin-fs@2"],
-      "permissions": ["fs:allow-watch", "fs:allow-unwatch"],
-      "requiresScope": true
+      "frontendDependencies": [
+        { "name": "@tauri-apps/plugin-fs", "version": "2.5.2" }
+      ],
+      "rustDependencies": [
+        { "name": "tauri-plugin-fs", "version": "=2.5.2", "features": ["watch"] }
+      ],
+      "plugins": ["tauri_plugin_fs::init()"],
+      "permissions": ["fs:allow-unwatch", "fs:allow-watch"],
+      "requiresScope": true,
+      "scopePermission": "fs:allow-watch",
+      "generatedFiles": [],
+      "rustModules": [],
+      "sourceSeams": [
+        "src/platform/tauri/folder-watch.ts"
+      ]
     },
     {
       "id": "sqlite-storage",
       "title": "SQLite storage",
       "path": "recipes/sqlite-storage",
       "kind": "official-plugin",
-      "nativeDependencies": ["tauri-plugin-sql@2 with sqlite feature"],
-      "frontendDependencies": ["@tauri-apps/plugin-sql@2"],
-      "permissions": ["sql:default", "sql:allow-execute"],
-      "requiresScope": false
+      "frontendDependencies": [
+        { "name": "@tauri-apps/plugin-sql", "version": "2.4.1" }
+      ],
+      "rustDependencies": [
+        { "name": "tauri-plugin-sql", "version": "=2.4.1", "features": ["sqlite"] }
+      ],
+      "plugins": ["tauri_plugin_sql::Builder::default().build()"],
+      "permissions": ["sql:default"],
+      "requiresScope": false,
+      "generatedFiles": [],
+      "rustModules": [],
+      "sourceSeams": [
+        "src/platform/tauri/database.ts",
+        "application-owned migrations/repositories"
+      ]
     },
     {
       "id": "background-jobs",
       "title": "Cancellable background jobs",
       "path": "recipes/background-jobs",
       "kind": "core-plus-adapter",
-      "nativeDependencies": [],
       "frontendDependencies": [],
+      "rustDependencies": [],
+      "plugins": [],
       "permissions": [],
-      "requiresScope": false
+      "requiresScope": false,
+      "generatedFiles": [
+        {
+          "source": "recipes/background-jobs/scaffold/jobs.rs",
+          "target": "src-tauri/crates/app-core/src/jobs.rs"
+        }
+      ],
+      "rustModules": [
+        { "path": "src-tauri/crates/app-core/src/lib.rs", "module": "jobs" }
+      ],
+      "sourceSeams": [
+        "src-tauri/crates/app-core/src/jobs.rs",
+        "src-tauri/src/jobs.rs",
+        "src/platform/tauri/jobs.ts"
+      ]
     },
     {
       "id": "updater",
       "title": "Signed application updates",
       "path": "recipes/updater",
       "kind": "official-plugin",
-      "nativeDependencies": ["tauri-plugin-updater@2", "tauri-plugin-process@2"],
-      "frontendDependencies": ["@tauri-apps/plugin-updater@2", "@tauri-apps/plugin-process@2"],
-      "permissions": ["updater:default", "process:allow-restart"],
-      "requiresScope": false
+      "frontendDependencies": [
+        { "name": "@tauri-apps/plugin-process", "version": "2.3.1" },
+        { "name": "@tauri-apps/plugin-updater", "version": "2.11.0" }
+      ],
+      "rustDependencies": [
+        { "name": "tauri-plugin-process", "version": "=2.3.1", "features": [] },
+        { "name": "tauri-plugin-updater", "version": "=2.11.0", "features": [] }
+      ],
+      "plugins": [
+        "tauri_plugin_process::init()",
+        "tauri_plugin_updater::Builder::new().build()"
+      ],
+      "permissions": ["process:allow-restart", "updater:default"],
+      "requiresScope": false,
+      "generatedFiles": [],
+      "rustModules": [],
+      "sourceSeams": [
+        "src/platform/tauri/updater.ts",
+        "application-owned signing/release configuration"
+      ]
     }
   ]
 }
