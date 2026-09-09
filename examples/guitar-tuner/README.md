@@ -20,10 +20,10 @@ bun install --frozen-lockfile
 bun run tauri dev
 ```
 
-The repository pins Bun to 1.4.0 and Rust to 1.98.0. On Linux, install the same WebKit/GTK development packages used by the template validation workflow.
+The repository pins Bun to 1.4.0 and Rust to 1.98.0. The example also pins its top-level Tauri and Tauri Build dependencies to the same accepted runtime generation as the template; the committed Cargo lock fixes the complete transitive set. On Linux, install the same WebKit/GTK development packages used by the template validation workflow.
 
 On macOS, `src-tauri/Info.plist` supplies the microphone usage description required for the system permission prompt.
 
 ## Verification
 
-The path-scoped `Guitar tuner example` workflow builds the frontend and runs Rust formatting, Clippy, and tests. Its Rust consumer test uses a harmonic-rich low E where the second harmonic is stronger than the fundamental, so the example exercises the shared pitch-selection improvement instead of merely compiling against it.
+The path-scoped `Guitar tuner example` workflow builds the frontend, verifies the committed Cargo lock with `cargo metadata --locked`, and runs Rust formatting, Clippy, and tests. Its Rust consumer test uses a harmonic-rich low E where the second harmonic is stronger than the fundamental, so the example exercises the shared pitch-selection improvement instead of merely compiling against it.
