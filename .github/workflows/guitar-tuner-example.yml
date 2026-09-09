@@ -45,7 +45,7 @@ jobs:
 
       - name: Install frontend dependencies
         working-directory: examples/guitar-tuner
-        run: bun install
+        run: bun install --frozen-lockfile
 
       - name: Build frontend
         working-directory: examples/guitar-tuner
