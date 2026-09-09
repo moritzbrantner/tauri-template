@@ -40,7 +40,6 @@ jobs:
           bun-version: 1.4.0
 
       - name: Install exact Rust toolchain
-        shell: bash
         run: |
           rustup toolchain install 1.98.0 --profile minimal
           rustup default 1.98.0
