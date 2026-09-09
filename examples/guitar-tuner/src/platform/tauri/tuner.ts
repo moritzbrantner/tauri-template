@@ -2,7 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 
 export type TuningStatus = "listening" | "inTune" | "flat" | "sharp";
 
-export interface TuningReading {
+export type TuningReading = {
   detectedFrequencyHz: number | null;
   detectedNote: string | null;
   targetString: string | null;
@@ -10,7 +10,7 @@ export interface TuningReading {
   cents: number | null;
   confidence: number;
   status: TuningStatus;
-}
+};
 
 export async function analyzePitch(
   samples: number[],
