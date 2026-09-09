@@ -18,6 +18,7 @@
       "scopePermission": "fs:allow-watch",
       "generatedFiles": [],
       "rustModules": [],
+      "validationCommands": [],
       "sourceSeams": [
         "src/platform/tauri/folder-watch.ts"
       ]
@@ -38,6 +39,7 @@
       "requiresScope": false,
       "generatedFiles": [],
       "rustModules": [],
+      "validationCommands": [],
       "sourceSeams": [
         "src/platform/tauri/database.ts",
         "application-owned migrations/repositories"
@@ -61,6 +63,9 @@
       ],
       "rustModules": [
         { "path": "src-tauri/crates/app-core/src/lib.rs", "module": "jobs" }
+      ],
+      "validationCommands": [
+        ["cargo", "test", "--manifest-path", "src-tauri/Cargo.toml", "--locked"]
       ],
       "sourceSeams": [
         "src-tauri/crates/app-core/src/jobs.rs",
@@ -89,9 +94,40 @@
       "requiresScope": false,
       "generatedFiles": [],
       "rustModules": [],
+      "validationCommands": [],
       "sourceSeams": [
         "src/platform/tauri/updater.ts",
         "application-owned signing/release configuration"
+      ]
+    },
+    {
+      "id": "release-signing",
+      "title": "Cross-platform signed GitHub releases",
+      "path": "recipes/release-signing",
+      "kind": "release-pipeline",
+      "frontendDependencies": [],
+      "rustDependencies": [],
+      "plugins": [],
+      "permissions": [],
+      "requiresScope": false,
+      "generatedFiles": [
+        {
+          "source": "recipes/release-signing/scaffold/release.yml",
+          "target": ".github/workflows/release.yml"
+        },
+        {
+          "source": "recipes/release-signing/scaffold/verify-release-version.mjs",
+          "target": "scripts/verify-release-version.mjs"
+        }
+      ],
+      "rustModules": [],
+      "validationCommands": [
+        ["node", "--check", "scripts/verify-release-version.mjs"]
+      ],
+      "sourceSeams": [
+        ".github/workflows/release.yml",
+        "src-tauri/tauri.conf.json platform signing identity",
+        "GitHub repository secrets and release policy"
       ]
     }
   ]
