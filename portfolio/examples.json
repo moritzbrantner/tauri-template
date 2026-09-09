@@ -1,0 +1,24 @@
+{
+  "title": "Tauri Example Portfolio",
+  "description": "Small desktop-first applications built from the shared Tauri foundation, with browser previews that keep native behavior owned by Rust and Tauri.",
+  "examples": [
+    {
+      "slug": "template",
+      "name": "Tauri App Scaffold",
+      "description": "The minimal React, TypeScript, Vite, and Rust application shell used as the reusable template baseline.",
+      "category": "Foundation",
+      "status": "preview",
+      "source": ".",
+      "runtime": "Browser shell preview; native command requires Tauri"
+    },
+    {
+      "slug": "guitar-tuner",
+      "name": "Guitar Tuner",
+      "description": "A microphone-driven tuner whose pitch detection and tuning decisions stay in the reusable Rust core.",
+      "category": "Audio",
+      "status": "preview",
+      "source": "examples/guitar-tuner",
+      "runtime": "Browser shell preview; pitch engine requires Tauri"
+    }
+  ]
+}
