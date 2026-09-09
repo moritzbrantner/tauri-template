@@ -51,13 +51,13 @@ jobs:
         working-directory: examples/guitar-tuner
         run: bun run build
 
+      - name: Verify committed Rust lockfile
+        working-directory: examples/guitar-tuner/src-tauri
+        run: test -f Cargo.lock
+
       - name: Verify Rust formatting
         working-directory: examples/guitar-tuner/src-tauri
         run: cargo fmt -- --check
-
-      - name: Resolve example Rust dependencies
-        working-directory: examples/guitar-tuner/src-tauri
-        run: cargo generate-lockfile
 
       - name: Run Clippy
         working-directory: examples/guitar-tuner/src-tauri
