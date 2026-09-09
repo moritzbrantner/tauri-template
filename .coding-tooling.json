@@ -14,6 +14,7 @@
       "template:smoke"
     ],
     "integration": ["test:e2e"],
+    "native-runtime": ["test:native-runtime"],
     "template": ["template:smoke"]
   },
   "requiredCapabilities": [
@@ -24,5 +25,5 @@
     "build",
     "test:unit"
   ],
-  "optionalCapabilities": ["test:e2e", "template:smoke"]
+  "optionalCapabilities": ["test:e2e", "test:native-runtime", "template:smoke"]
 }
