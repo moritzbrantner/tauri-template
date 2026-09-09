@@ -1,6 +1,12 @@
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import {
+  fingerprintTemplateSource,
+  readToolchainPins,
+  resolveTemplateSourceRevision,
+  validateStateShape,
+} from "./template-state.mjs";
 
 const TEMPLATE_NAME = "tauri-template";
 const TEMPLATE_LIB_NAME = "tauri_template_lib";
@@ -125,15 +131,13 @@ function applicationAgentSentence(name) {
 }
 
 function validateTemplateState(state, currentName) {
-  if (
-    state.schemaVersion !== 1 ||
-    typeof state.templateRepository !== "string" ||
-    !Array.isArray(state.activatedRecipes)
-  ) {
-    throw new Error(`${TEMPLATE_STATE_PATH} must use schema version 1 with templateRepository and activatedRecipes`);
-  }
+  validateStateShape(state, TEMPLATE_STATE_PATH);
   if (currentName === TEMPLATE_NAME) {
-    if (state.kind !== "template" || state.activatedRecipes.length !== 0) {
+    if (
+      state.kind !== "template" ||
+      state.activatedRecipes.length !== 0 ||
+      Object.keys(state.recipeConfig).length !== 0
+    ) {
       throw new Error(`${TEMPLATE_STATE_PATH} must describe an unmodified template before first initialization`);
     }
     return;
@@ -221,6 +225,18 @@ export async function initializeTemplate(root, options) {
     );
   }
 
+  if (currentName === TEMPLATE_NAME) {
+    const [sourceFingerprint, toolchains] = await Promise.all([
+      fingerprintTemplateSource(root),
+      readToolchainPins(root),
+    ]);
+    templateState.provenance = {
+      sourceRevision: resolveTemplateSourceRevision(root, templateState.templateRepository),
+      sourceFingerprint,
+      toolchains,
+    };
+  }
+
   packageJson.name = name;
   tauriConfig.productName = title;
   tauriConfig.identifier = identifier;
@@ -287,7 +303,7 @@ export async function initializeTemplate(root, options) {
     );
     readme = readme.replace(
       TEMPLATE_SCOPE,
-      `## Template provenance\n\nThis application was initialized from \`${TEMPLATE_NAME}\`. Product-specific code belongs here; broadly reusable native capabilities should remain isolated behind the core/Tauri adapter seams.`,
+      `## Template provenance\n\nThis application was initialized from \`${TEMPLATE_NAME}\`. Machine-readable source revision/fingerprint, toolchain provenance, application identity, and activated recipes live in \`${TEMPLATE_STATE_PATH}\`. Product-specific code belongs here; broadly reusable native capabilities should remain isolated behind the core/Tauri adapter seams.`,
     );
   }
 
