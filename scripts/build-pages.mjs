@@ -32,7 +32,9 @@ function run(command, args, cwd, env = process.env) {
 
 function validateManifest() {
   if (!manifest.title || !manifest.description || !Array.isArray(manifest.examples)) {
-    throw new Error("portfolio/examples.json must contain title, description, and an examples array");
+    throw new Error(
+      "portfolio/examples.json must contain title, description, and an examples array",
+    );
   }
 
   const slugs = new Set();
@@ -45,7 +47,13 @@ function validateManifest() {
     }
     slugs.add(example.slug);
 
-    if (!example.name || !example.description || !example.category || !example.status || !example.runtime) {
+    if (
+      !example.name ||
+      !example.description ||
+      !example.category ||
+      !example.status ||
+      !example.runtime
+    ) {
       throw new Error(`Example ${example.slug} is missing required portfolio metadata`);
     }
     if (!example.source) {
