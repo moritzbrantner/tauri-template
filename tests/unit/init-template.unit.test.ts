@@ -49,4 +49,21 @@ describe("template initializer", () => {
       title: "Media Workbench",
     });
   });
+
+  it("parses an intentional forced rebrand", () => {
+    expect(
+      parseArgs([
+        "--force",
+        "--name",
+        "renamed-workbench",
+        "--identifier",
+        "com.example.renamed-workbench",
+      ]),
+    ).toEqual({
+      force: true,
+      name: "renamed-workbench",
+      identifier: "com.example.renamed-workbench",
+      title: "Renamed Workbench",
+    });
+  });
 });
