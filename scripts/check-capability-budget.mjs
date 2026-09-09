@@ -6,12 +6,16 @@ const CAPABILITIES_DIR = "src-tauri/capabilities";
 const DEFAULT_CAPABILITY = "default.json";
 
 function sameStrings(actual, expected) {
-  return actual.length === expected.length && actual.every((value, index) => value === expected[index]);
+  return (
+    actual.length === expected.length && actual.every((value, index) => value === expected[index])
+  );
 }
 
 export function assertDefaultCapability(capability) {
   if (capability.identifier !== "default") {
-    throw new Error(`default capability identifier must be "default", got ${JSON.stringify(capability.identifier)}`);
+    throw new Error(
+      `default capability identifier must be "default", got ${JSON.stringify(capability.identifier)}`,
+    );
   }
   if (!Array.isArray(capability.windows) || !sameStrings(capability.windows, ["main"])) {
     throw new Error('default capability must target only the "main" window');
@@ -29,7 +33,9 @@ export function assertDefaultCapability(capability) {
 export async function checkCapabilityBudget(root = process.cwd()) {
   const capabilityDir = path.join(root, CAPABILITIES_DIR);
   const capabilityFiles = (await readdir(capabilityDir))
-    .filter((entry) => entry.endsWith(".json") || entry.endsWith(".json5") || entry.endsWith(".toml"))
+    .filter(
+      (entry) => entry.endsWith(".json") || entry.endsWith(".json5") || entry.endsWith(".toml"),
+    )
     .sort();
 
   if (!sameStrings(capabilityFiles, [DEFAULT_CAPABILITY])) {
@@ -38,7 +44,9 @@ export async function checkCapabilityBudget(root = process.cwd()) {
     );
   }
 
-  const capability = JSON.parse(await readFile(path.join(capabilityDir, DEFAULT_CAPABILITY), "utf8"));
+  const capability = JSON.parse(
+    await readFile(path.join(capabilityDir, DEFAULT_CAPABILITY), "utf8"),
+  );
   assertDefaultCapability(capability);
 }
 
