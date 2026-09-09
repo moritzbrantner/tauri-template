@@ -1,6 +1,6 @@
+import { spawnSync } from "node:child_process";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
 
 const TEMPLATE_NAME = "tauri-template";
@@ -12,12 +12,25 @@ const CARGO_LOCK_PATH = "src-tauri/Cargo.lock";
 const LIB_PATH = "src-tauri/src/lib.rs";
 const CAPABILITY_PATH = "src-tauri/capabilities/default.json";
 const BUN_LOCK_PATH = "bun.lock";
+const RECIPE_PLUGIN_START = "        // tauri-template:recipe-plugins:start";
+const RECIPE_PLUGIN_END = "        // tauri-template:recipe-plugins:end";
 
 function parseArgs(argv) {
-  const options = { dryRun: false, recipeId: null };
-  for (const argument of argv) {
+  const options = { dryRun: false, recipeId: null, scope: null };
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const argument = argv[index];
     if (argument === "--dry-run") {
       options.dryRun = true;
+      continue;
+    }
+    if (argument === "--scope") {
+      const value = argv[index + 1];
+      if (!value || value.startsWith("--")) {
+        throw new Error("--scope requires a value");
+      }
+      options.scope = validateScope(value);
+      index += 1;
       continue;
     }
     if (argument.startsWith("--")) {
@@ -28,10 +41,19 @@ function parseArgs(argv) {
     }
     options.recipeId = argument;
   }
+
   if (!options.recipeId) {
-    throw new Error("usage: bun run recipe:add -- <recipe-id> [--dry-run]");
+    throw new Error("usage: bun run recipe:add -- <recipe-id> [--scope <tauri-path-scope>] [--dry-run]");
   }
   return options;
+}
+
+function validateScope(value) {
+  const scope = value.trim();
+  if (!scope || /[\r\n]/.test(scope)) {
+    throw new Error("--scope must be a non-empty single-line Tauri filesystem scope");
+  }
+  return scope;
 }
 
 async function read(root, relativePath) {
@@ -105,30 +127,38 @@ function insertCargoDependency(content, dependency) {
   return lines.join("\n");
 }
 
-function insertPlugins(content, expressions) {
-  if (expressions.length === 0) {
-    return content;
+function setRecipePlugins(content, expressions) {
+  const plugins = [...new Set(expressions)].sort();
+  const lines = content.split("\n");
+  const startIndex = lines.indexOf(RECIPE_PLUGIN_START);
+  const endIndex = lines.indexOf(RECIPE_PLUGIN_END);
+
+  if ((startIndex === -1) !== (endIndex === -1)) {
+    throw new Error(`${LIB_PATH} contains an incomplete recipe plugin marker block`);
+  }
+  if (startIndex !== -1 && endIndex <= startIndex) {
+    throw new Error(`${LIB_PATH} contains an invalid recipe plugin marker block`);
   }
 
-  const lines = content.split("\n");
+  const block =
+    plugins.length === 0
+      ? []
+      : [
+          RECIPE_PLUGIN_START,
+          ...plugins.map((expression) => `        .plugin(${expression})`),
+          RECIPE_PLUGIN_END,
+        ];
+
+  if (startIndex !== -1) {
+    lines.splice(startIndex, endIndex - startIndex + 1, ...block);
+    return lines.join("\n");
+  }
+
   const invokeIndex = lines.findIndex((line) => line.includes(".invoke_handler("));
   if (invokeIndex === -1) {
     throw new Error(`${LIB_PATH} does not contain the expected Tauri invoke handler seam`);
   }
-
-  let pluginStart = invokeIndex;
-  while (pluginStart > 0 && lines[pluginStart - 1].trimStart().startsWith(".plugin(")) {
-    pluginStart -= 1;
-  }
-
-  const existing = lines
-    .slice(pluginStart, invokeIndex)
-    .map((line) => line.trim())
-    .filter((line) => line.startsWith(".plugin(") && line.endsWith(")"))
-    .map((line) => line.slice(".plugin(".length, -1));
-  const plugins = [...new Set([...existing, ...expressions])].sort();
-  const pluginLines = plugins.map((expression) => `        .plugin(${expression})`);
-  lines.splice(pluginStart, invokeIndex - pluginStart, ...pluginLines);
+  lines.splice(invokeIndex, 0, ...block);
   return lines.join("\n");
 }
 
@@ -142,16 +172,57 @@ function permissionIdentifier(permission) {
   throw new Error(`Unsupported capability permission shape: ${JSON.stringify(permission)}`);
 }
 
-function addPermissions(capability, permissions) {
+function configuredPermissions(recipe, scope) {
+  if (!recipe.requiresScope) {
+    if (scope !== null) {
+      throw new Error(`${recipe.id} does not accept --scope`);
+    }
+    return recipe.permissions;
+  }
+  if (!scope) {
+    throw new Error(`${recipe.id} requires --scope with the narrow Tauri path pattern the app should watch`);
+  }
+  if (!recipe.scopePermission || !recipe.permissions.includes(recipe.scopePermission)) {
+    throw new Error(`${recipe.id} declares requiresScope without a valid scopePermission`);
+  }
+  return recipe.permissions.map((permission) =>
+    permission === recipe.scopePermission
+      ? { identifier: permission, allow: [{ path: scope }] }
+      : permission,
+  );
+}
+
+function addPermissions(capability, additions) {
   if (!Array.isArray(capability.permissions)) {
     throw new Error(`${CAPABILITY_PATH} must contain a permissions array`);
   }
-  const existingIds = new Set(capability.permissions.map(permissionIdentifier));
-  const additions = permissions.filter((permission) => !existingIds.has(permission));
-  const stringPermissions = [...capability.permissions.filter((permission) => typeof permission === "string"), ...additions]
-    .sort();
-  const scopedPermissions = capability.permissions.filter((permission) => typeof permission !== "string");
-  capability.permissions = [...stringPermissions, ...scopedPermissions];
+
+  const byIdentifier = new Map();
+  for (const permission of capability.permissions) {
+    const identifier = permissionIdentifier(permission);
+    if (byIdentifier.has(identifier)) {
+      throw new Error(`${CAPABILITY_PATH} already contains duplicate permission ${identifier}`);
+    }
+    byIdentifier.set(identifier, permission);
+  }
+
+  for (const permission of additions) {
+    const identifier = permissionIdentifier(permission);
+    const existing = byIdentifier.get(identifier);
+    if (existing !== undefined) {
+      if (JSON.stringify(existing) !== JSON.stringify(permission)) {
+        throw new Error(
+          `${CAPABILITY_PATH} already configures ${identifier} differently; refusing to overwrite application-owned permission scope`,
+        );
+      }
+      continue;
+    }
+    byIdentifier.set(identifier, permission);
+  }
+
+  capability.permissions = [...byIdentifier.entries()]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([, permission]) => permission);
 }
 
 function addRustModule(content, moduleName) {
@@ -185,25 +256,6 @@ function run(command, args, root) {
   }
 }
 
-async function commitMutations(root, mutations) {
-  const applied = [];
-  try {
-    for (const mutation of mutations) {
-      if (mutation.before === mutation.after) {
-        continue;
-      }
-      const absolutePath = path.join(root, mutation.path);
-      await mkdir(path.dirname(absolutePath), { recursive: true });
-      await writeFile(absolutePath, mutation.after, "utf8");
-      applied.push(mutation);
-    }
-  } catch (error) {
-    await rollbackMutations(root, applied);
-    throw error;
-  }
-  return applied;
-}
-
 async function rollbackMutations(root, mutations) {
   const failures = [];
   for (const mutation of [...mutations].reverse()) {
@@ -223,7 +275,26 @@ async function rollbackMutations(root, mutations) {
   }
 }
 
-async function loadRecipe(root, recipeId) {
+async function commitMutations(root, mutations) {
+  const applied = [];
+  try {
+    for (const mutation of mutations) {
+      if (mutation.before === mutation.after) {
+        continue;
+      }
+      const absolutePath = path.join(root, mutation.path);
+      await mkdir(path.dirname(absolutePath), { recursive: true });
+      await writeFile(absolutePath, mutation.after, "utf8");
+      applied.push(mutation);
+    }
+  } catch (error) {
+    await rollbackMutations(root, applied);
+    throw error;
+  }
+  return applied;
+}
+
+async function loadRegistryAndRecipe(root, recipeId) {
   const registry = JSON.parse(await read(root, REGISTRY_PATH));
   if (registry.schemaVersion !== 2 || !Array.isArray(registry.recipes)) {
     throw new Error(`${REGISTRY_PATH} must use executable recipe schema version 2`);
@@ -232,11 +303,12 @@ async function loadRecipe(root, recipeId) {
   if (!recipe) {
     throw new Error(`Unknown recipe ${JSON.stringify(recipeId)}`);
   }
-  return recipe;
+  return { registry, recipe };
 }
 
-export async function planRecipe(root, recipeId) {
-  const recipe = await loadRecipe(root, recipeId);
+export async function planRecipe(root, recipeId, { scope = null } = {}) {
+  const { registry, recipe } = await loadRegistryAndRecipe(root, recipeId);
+  const recipePermissions = configuredPermissions(recipe, scope);
   const originals = {
     [PACKAGE_PATH]: await read(root, PACKAGE_PATH),
     [CARGO_PATH]: await read(root, CARGO_PATH),
@@ -251,11 +323,30 @@ export async function planRecipe(root, recipeId) {
   }
 
   const state = JSON.parse(originals[STATE_PATH]);
-  if (state.kind !== "application" || !Array.isArray(state.activatedRecipes)) {
-    throw new Error(`${STATE_PATH} does not describe an initialized application`);
+  if (
+    state.kind !== "application" ||
+    !Array.isArray(state.activatedRecipes) ||
+    !state.recipeConfig ||
+    typeof state.recipeConfig !== "object" ||
+    Array.isArray(state.recipeConfig)
+  ) {
+    throw new Error(`${STATE_PATH} does not describe an initialized application with recipe configuration`);
   }
+
   if (state.activatedRecipes.includes(recipe.id)) {
-    return { recipe, alreadyActive: true, mutations: [], dependencyChanges: false };
+    const existingConfig = state.recipeConfig[recipe.id] ?? {};
+    const expectedConfig = recipe.requiresScope ? { scope } : {};
+    if (JSON.stringify(existingConfig) !== JSON.stringify(expectedConfig)) {
+      throw new Error(
+        `${recipe.id} is already active with different configuration; explicit recipe reconfiguration is not automatic`,
+      );
+    }
+    return {
+      recipe,
+      permissions: recipePermissions,
+      alreadyActive: true,
+      mutations: [],
+    };
   }
 
   packageJson.dependencies ??= {};
@@ -275,11 +366,22 @@ export async function planRecipe(root, recipeId) {
     cargoToml = insertCargoDependency(cargoToml, dependency);
   }
 
-  const libRs = insertPlugins(originals[LIB_PATH], recipe.plugins);
-  const capability = JSON.parse(originals[CAPABILITY_PATH]);
-  addPermissions(capability, recipe.permissions);
-
   state.activatedRecipes = [...state.activatedRecipes, recipe.id].sort();
+  state.recipeConfig[recipe.id] = recipe.requiresScope ? { scope } : {};
+  state.recipeConfig = sortedObject(state.recipeConfig);
+
+  const recipesById = new Map(registry.recipes.map((candidate) => [candidate.id, candidate]));
+  const activePlugins = state.activatedRecipes.flatMap((activeRecipeId) => {
+    const activeRecipe = recipesById.get(activeRecipeId);
+    if (!activeRecipe) {
+      throw new Error(`activated recipe ${JSON.stringify(activeRecipeId)} is missing from ${REGISTRY_PATH}`);
+    }
+    return activeRecipe.plugins;
+  });
+  const libRs = setRecipePlugins(originals[LIB_PATH], activePlugins);
+
+  const capability = JSON.parse(originals[CAPABILITY_PATH]);
+  addPermissions(capability, recipePermissions);
 
   const mutationMap = new Map();
   const addMutation = (relativePath, before, after) => {
@@ -309,17 +411,16 @@ export async function planRecipe(root, recipeId) {
     addMutation(rustModule.path, before, addRustModule(current, rustModule.module));
   }
 
-  const mutations = [...mutationMap.values()].filter((mutation) => mutation.before !== mutation.after);
   return {
     recipe,
+    permissions: recipePermissions,
     alreadyActive: false,
-    mutations,
-    dependencyChanges: recipe.frontendDependencies.length > 0 || recipe.rustDependencies.length > 0,
+    mutations: [...mutationMap.values()].filter((mutation) => mutation.before !== mutation.after),
   };
 }
 
-export async function applyRecipe(root, recipeId, { dryRun = false } = {}) {
-  const plan = await planRecipe(root, recipeId);
+export async function applyRecipe(root, recipeId, { dryRun = false, scope = null } = {}) {
+  const plan = await planRecipe(root, recipeId, { scope });
   const summary = {
     recipe: plan.recipe.id,
     alreadyActive: plan.alreadyActive,
@@ -327,7 +428,7 @@ export async function applyRecipe(root, recipeId, { dryRun = false } = {}) {
     frontendDependencies: plan.recipe.frontendDependencies,
     rustDependencies: plan.recipe.rustDependencies,
     plugins: plan.recipe.plugins,
-    permissions: plan.recipe.permissions,
+    permissions: plan.permissions,
     sourceSeams: plan.recipe.sourceSeams,
     requiresScope: plan.recipe.requiresScope,
   };
@@ -352,10 +453,21 @@ export async function applyRecipe(root, recipeId, { dryRun = false } = {}) {
       run("cargo", ["check", "--manifest-path", CARGO_PATH], root);
       run("cargo", ["check", "--manifest-path", CARGO_PATH, "--locked"], root);
     }
+    run("node", ["./scripts/check-capability-budget.mjs"], root);
   } catch (error) {
-    await rollbackMutations(root, applied);
+    let rollbackError = null;
+    try {
+      await rollbackMutations(root, applied);
+    } catch (candidate) {
+      rollbackError = candidate;
+    }
     await writeFile(path.join(root, BUN_LOCK_PATH), lockBackups[BUN_LOCK_PATH], "utf8");
     await writeFile(path.join(root, CARGO_LOCK_PATH), lockBackups[CARGO_LOCK_PATH], "utf8");
+    if (rollbackError) {
+      throw new Error(`Recipe activation failed and rollback was incomplete: ${String(rollbackError)}`, {
+        cause: error,
+      });
+    }
     throw error;
   }
 
@@ -365,7 +477,10 @@ export async function applyRecipe(root, recipeId, { dryRun = false } = {}) {
 
 async function main() {
   const options = parseArgs(process.argv.slice(2));
-  await applyRecipe(process.cwd(), options.recipeId, { dryRun: options.dryRun });
+  await applyRecipe(process.cwd(), options.recipeId, {
+    dryRun: options.dryRun,
+    scope: options.scope,
+  });
 }
 
 const invokedPath = process.argv[1] ? pathToFileURL(path.resolve(process.argv[1])).href : null;
