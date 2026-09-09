@@ -54,7 +54,9 @@ jobs:
 
       - name: Verify committed Rust lockfile
         working-directory: examples/guitar-tuner/src-tauri
-        run: test -f Cargo.lock
+        run: |
+          test -f Cargo.lock
+          cargo metadata --locked --format-version 1 >/dev/null
 
       - name: Verify Rust formatting
         working-directory: examples/guitar-tuner/src-tauri
