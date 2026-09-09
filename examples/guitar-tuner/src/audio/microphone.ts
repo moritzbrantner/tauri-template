@@ -1,6 +1,6 @@
-export interface MicrophoneSession {
+export type MicrophoneSession = {
   stop(): Promise<void>;
-}
+};
 
 export type AudioFrameHandler = (samples: number[], sampleRate: number) => Promise<void>;
 
