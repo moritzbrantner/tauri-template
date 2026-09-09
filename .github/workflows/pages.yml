@@ -44,7 +44,7 @@ jobs:
           bun-version: 1.4.0
 
       - name: Build portfolio and browser previews
-        run: node scripts/build-pages.mjs
+        run: bun run pages:build
 
       - name: Upload Pages artifact
         if: github.event_name != 'pull_request'
