@@ -1,8 +1,31 @@
 # Optional capability recipes
 
-The default template stays deliberately small. Recipes are integration guides for capabilities that are useful in many applications but should not be installed or permitted in every application.
+The default template stays deliberately small. Recipes are explicit application transformations for capabilities that are useful in many applications but should not be installed or permitted in every application.
 
-`registry.json` is the machine-readable catalogue. A recipe may later be consumed by scaffolding tooling, but the catalogue does not make any recipe part of the default runtime.
+`registry.json` is the machine-readable catalogue and transformation contract. Initialize an application before activating a recipe.
+
+Preview a change without writing anything:
+
+```bash
+bun run recipe:add -- sqlite-storage --dry-run
+```
+
+Apply it:
+
+```bash
+bun run recipe:add -- sqlite-storage
+```
+
+Recipes that require a filesystem scope fail closed until the scope is explicit:
+
+```bash
+bun run recipe:add -- folder-watch --scope '$APPDATA/imports/**/*' --dry-run
+bun run recipe:add -- folder-watch --scope '$APPDATA/imports/**/*'
+```
+
+Activation records the recipe and its deterministic configuration in `.tauri-template.json`. Reapplying the same recipe with the same configuration is a no-op. A conflicting existing dependency, permission scope, generated file, or recipe configuration is not overwritten automatically.
+
+The transformation engine prepares source changes first, updates lockfiles through the native Bun/Cargo resolvers, verifies frozen/locked resolution and the capability budget, and rolls the activation back if resolution or validation fails.
 
 ## Rules
 
@@ -13,12 +36,15 @@ The default template stays deliberately small. Recipes are integration guides fo
 - Keep frontend plugin calls behind `src/platform/tauri` adapters.
 - Add native/integration coverage for OS- or Tauri-dependent behavior; browser tests are not evidence that a plugin works.
 - Never copy app-specific signing keys, updater endpoints, database schemas, filesystem paths, or credentials into the template.
+- Treat recipe source seams as ownership guidance, not permission to overwrite application-owned code.
 
 ## Initial recipes
 
-- `folder-watch`: use Tauri's filesystem plugin with the `watch` feature and explicit path scopes instead of the old custom `notify` watcher.
-- `sqlite-storage`: use Tauri's SQL plugin for generic SQLite access; keep migrations/domain repositories application-specific.
-- `background-jobs`: keep scheduling/cancellation state in reusable Rust code and use Tauri events/commands only as the transport boundary.
-- `updater`: add signed updates per application, with app-owned signing material and the narrow `process:allow-restart` permission.
+- `folder-watch`: use Tauri's filesystem plugin with the `watch` feature and an explicit path scope instead of the old custom `notify` watcher.
+- `sqlite-storage`: use Tauri's SQL plugin for generic SQLite access; activation grants read-oriented `sql:default` only, while migrations/domain repositories and broader write authority remain application-specific.
+- `background-jobs`: install a pure Rust lifecycle scaffold with monotonic progress and idempotent cancellation; Tauri command/event and frontend adapters remain application-owned seams.
+- `updater`: add signed-update runtime dependencies and the narrow `process:allow-restart` permission, while signing material, endpoints, release policy, and UX remain application-owned.
 
-Official Tauri 2 documentation is the source of truth for current plugin permissions and platform support. Re-check it when applying a recipe because plugin permission sets can evolve independently of this template.
+`bun run recipes:smoke` initializes a disposable application, dry-runs and applies every registered recipe, verifies second application is byte-stable, verifies declared capability state, and runs the frozen/locked frontend and Rust validation tiers.
+
+Official Tauri 2 documentation remains the source of truth for plugin permission and platform semantics. Dependency versions are explicit in `registry.json` and should be updated through normal dependency/tooling review rather than silently resolved during activation.
