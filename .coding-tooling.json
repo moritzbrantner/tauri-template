@@ -2,10 +2,11 @@
   "schemaVersion": 1,
   "profile": "repository-foundation-v1",
   "tiers": {
-    "fast": ["format:check", "lint", "typecheck", "build", "test:unit"],
+    "fast": ["format:check", "lint", "check:capability-budget", "typecheck", "build", "test:unit"],
     "full": [
       "format:check",
       "lint",
+      "check:capability-budget",
       "typecheck",
       "build",
       "test:unit",
@@ -15,6 +16,13 @@
     "integration": ["test:e2e"],
     "template": ["template:smoke"]
   },
-  "requiredCapabilities": ["format:check", "lint", "typecheck", "build", "test:unit"],
+  "requiredCapabilities": [
+    "format:check",
+    "lint",
+    "check:capability-budget",
+    "typecheck",
+    "build",
+    "test:unit"
+  ],
   "optionalCapabilities": ["test:e2e", "template:smoke"]
 }
