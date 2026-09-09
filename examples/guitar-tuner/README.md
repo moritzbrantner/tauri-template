@@ -7,7 +7,7 @@ A small Tauri 2 guitar tuner that keeps microphone capture at the WebView bounda
 1. `src/audio/microphone.ts` requests microphone permission and captures short in-memory PCM windows with the Web Audio API. Audio is never persisted or uploaded.
 2. `src/platform/tauri/tuner.ts` is the only frontend IPC adapter.
 3. `src-tauri/src/lib.rs` bounds the IPC payload and delegates immediately to `guitar-tuner-core`.
-4. `src-tauri/crates/guitar-tuner-core` owns standard-tuning semantics and consumes `moenarch-audio-analysis-pitch` at the exact source revision from audio-analysis PR #83.
+4. `src-tauri/crates/guitar-tuner-core` owns standard-tuning semantics and consumes `moenarch-audio-analysis-pitch` at merged audio-analysis revision `59bf3279811ac36e44139ffb092a979e4bfdaf24` (PR #83).
 
 The core checks standard E2–A2–D3–G3–B3–E4 tuning, reports cents from the nearest string, and treats ±5 cents as in tune.
 
@@ -16,7 +16,7 @@ The core checks standard E2–A2–D3–G3–B3–E4 tuning, reports cents from 
 From this directory:
 
 ```bash
-bun install
+bun install --frozen-lockfile
 bun run tauri dev
 ```
 
