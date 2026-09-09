@@ -22,20 +22,33 @@ function centsText(reading: TuningReading | null): string {
 
 export default function App() {
   const sessionRef = useRef<MicrophoneSession | null>(null);
+  const startingRef = useRef(false);
+  const disposedRef = useRef(false);
   const [listening, setListening] = useState(false);
+  const [starting, setStarting] = useState(false);
   const [reading, setReading] = useState<TuningReading | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    disposedRef.current = false;
     return () => {
+      disposedRef.current = true;
       void sessionRef.current?.stop();
+      sessionRef.current = null;
     };
   }, []);
 
   async function startListening() {
+    if (startingRef.current || sessionRef.current) {
+      return;
+    }
+
+    startingRef.current = true;
+    setStarting(true);
     setError(null);
+
     try {
-      sessionRef.current = await startMicrophone(async (samples, sampleRate) => {
+      const session = await startMicrophone(async (samples, sampleRate) => {
         try {
           setReading(await analyzePitch(samples, sampleRate));
           setError(null);
@@ -43,15 +56,28 @@ export default function App() {
           setError("Pitch analysis requires the Tauri desktop runtime.");
         }
       });
+
+      if (disposedRef.current) {
+        await session.stop();
+        return;
+      }
+
+      sessionRef.current = session;
       setListening(true);
     } catch (captureError) {
       setError(captureError instanceof Error ? captureError.message : "Could not open microphone.");
+    } finally {
+      startingRef.current = false;
+      if (!disposedRef.current) {
+        setStarting(false);
+      }
     }
   }
 
   async function stopListening() {
-    await sessionRef.current?.stop();
+    const session = sessionRef.current;
     sessionRef.current = null;
+    await session?.stop();
     setListening(false);
     setReading(null);
   }
@@ -95,14 +121,19 @@ export default function App() {
           </p>
         </div>
 
-        {error ? <p className="error" role="alert">{error}</p> : null}
+        {error ? (
+          <p className="error" role="alert">
+            {error}
+          </p>
+        ) : null}
 
         <button
           className="listen-button"
           type="button"
+          disabled={starting}
           onClick={listening ? stopListening : startListening}
         >
-          {listening ? "Stop listening" : "Use microphone"}
+          {starting ? "Opening microphone…" : listening ? "Stop listening" : "Use microphone"}
         </button>
         <p className="privacy">Audio is analyzed in memory and is not saved or sent to a server.</p>
       </section>
