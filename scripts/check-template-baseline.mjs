@@ -12,14 +12,18 @@ async function read(root, relativePath) {
 }
 
 function sameStrings(actual, expected) {
-  return actual.length === expected.length && actual.every((value, index) => value === expected[index]);
+  return (
+    actual.length === expected.length && actual.every((value, index) => value === expected[index])
+  );
 }
 
 function assertStringSet(actual, expected, label) {
   const normalizedActual = [...actual].sort();
   const normalizedExpected = [...expected].sort();
   if (!sameStrings(normalizedActual, normalizedExpected)) {
-    throw new Error(`${label} drifted; expected ${JSON.stringify(normalizedExpected)}, got ${JSON.stringify(normalizedActual)}`);
+    throw new Error(
+      `${label} drifted; expected ${JSON.stringify(normalizedExpected)}, got ${JSON.stringify(normalizedActual)}`,
+    );
   }
 }
 
@@ -87,7 +91,10 @@ export async function checkTemplateBaseline(root = process.cwd()) {
   }
 
   if (state.kind === "application") {
-    return { enforced: false, reason: "initialized applications own product-specific dependencies" };
+    return {
+      enforced: false,
+      reason: "initialized applications own product-specific dependencies",
+    };
   }
   if (state.kind !== "template") {
     throw new Error(`${STATE_PATH} has unsupported kind ${JSON.stringify(state.kind)}`);
@@ -114,7 +121,9 @@ export async function checkTemplateBaseline(root = process.cwd()) {
     await read(root, relativePath);
   }
 
-  const sourceFiles = (await listFiles(root, "src")).filter((relativePath) => /\.(?:ts|tsx)$/.test(relativePath));
+  const sourceFiles = (await listFiles(root, "src")).filter((relativePath) =>
+    /\.(?:ts|tsx)$/.test(relativePath),
+  );
   const nativeImportOwners = [];
   for (const relativePath of sourceFiles) {
     if (isNativeFrontendImport(await read(root, relativePath))) {
@@ -138,7 +147,9 @@ export async function checkTemplateBaseline(root = process.cwd()) {
 
 async function main() {
   const result = await checkTemplateBaseline();
-  process.stdout.write(`template baseline: ${result.enforced ? "enforced" : "skipped"} (${result.reason})\n`);
+  process.stdout.write(
+    `template baseline: ${result.enforced ? "enforced" : "skipped"} (${result.reason})\n`,
+  );
 }
 
 const invokedPath = process.argv[1] ? pathToFileURL(path.resolve(process.argv[1])).href : null;

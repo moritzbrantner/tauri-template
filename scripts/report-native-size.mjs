@@ -8,7 +8,8 @@ export async function reportNativeSize(root = process.cwd()) {
     throw new Error("package.json must declare the application name");
   }
 
-  const executableName = process.platform === "win32" ? `${packageJson.name}.exe` : packageJson.name;
+  const executableName =
+    process.platform === "win32" ? `${packageJson.name}.exe` : packageJson.name;
   const executablePath = path.join(root, "src-tauri", "target", "release", executableName);
   const metadata = await stat(executablePath);
   const result = { executable: executableName, bytes: metadata.size };
