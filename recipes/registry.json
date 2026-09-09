@@ -15,6 +15,7 @@
       "plugins": ["tauri_plugin_fs::init()"],
       "permissions": ["fs:allow-unwatch", "fs:allow-watch"],
       "requiresScope": true,
+      "scopePermission": "fs:allow-watch",
       "generatedFiles": [],
       "rustModules": [],
       "sourceSeams": [
