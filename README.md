@@ -102,6 +102,18 @@ bun run template:smoke
 
 `test:e2e` exercises the browser-rendered shell. It does not claim to exercise Tauri windows or OS integration. Native integration behavior belongs in a separate native validation tier.
 
+## GitHub Pages example portfolio
+
+GitHub Pages publishes a manifest-driven portfolio of browser-rendered previews from `portfolio/examples.json`. Build it locally with:
+
+```bash
+bun run pages:build
+```
+
+The builder installs every preview from its committed Bun lockfile, builds it with a repository-relative base path, and emits `_site/` without changing native ownership boundaries. Pages is intentionally a browser-shell surface: native commands, operating-system capabilities, and application/domain truth remain in Tauri and Rust. Examples must fail clearly when a native runtime is required rather than replacing native behavior with JavaScript.
+
+The `GitHub Pages` workflow validates the complete portfolio on pull requests and deploys `_site/` from `main` through the GitHub Pages artifact flow. New examples become publishable by adding repository-local source metadata to `portfolio/examples.json`.
+
 ## Repository policy
 
 `conventions.json`, `conventions.lock.json`, and `.conventions/` are the committed convention contract for coding agents and CI. Update them through `coding-tooling`; do not hand-edit the vendored snapshot. `.coding-tooling.json` declares the deterministic validation tiers used by the shared repository foundation.
