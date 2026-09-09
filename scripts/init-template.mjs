@@ -4,6 +4,7 @@ import { pathToFileURL } from "node:url";
 
 const TEMPLATE_NAME = "tauri-template";
 const TEMPLATE_LIB_NAME = "tauri_template_lib";
+const TEMPLATE_STATE_PATH = ".tauri-template.json";
 
 const TEMPLATE_README_INTRO =
   "A deliberately small Tauri 2 + React + TypeScript starting point for desktop-first applications.\n\nThe template keeps the default application self-contained. It does not require sibling repositories, private packages, application-specific domains, updater credentials, or broad native permissions.";
@@ -123,6 +124,27 @@ function applicationAgentSentence(name) {
   return `\`${name}\` is an application initialized from \`${TEMPLATE_NAME}\`. Product-specific code belongs in this repository; preserve the core/Tauri/frontend adapter boundaries so reusable logic stays portable.`;
 }
 
+function validateTemplateState(state, currentName) {
+  if (
+    state.schemaVersion !== 1 ||
+    typeof state.templateRepository !== "string" ||
+    !Array.isArray(state.activatedRecipes)
+  ) {
+    throw new Error(`${TEMPLATE_STATE_PATH} must use schema version 1 with templateRepository and activatedRecipes`);
+  }
+  if (currentName === TEMPLATE_NAME) {
+    if (state.kind !== "template" || state.activatedRecipes.length !== 0) {
+      throw new Error(`${TEMPLATE_STATE_PATH} must describe an unmodified template before first initialization`);
+    }
+    return;
+  }
+  if (state.kind !== "application" || state.application?.name !== currentName) {
+    throw new Error(
+      `${TEMPLATE_STATE_PATH} application identity must match package.json before an intentional rebrand`,
+    );
+  }
+}
+
 async function commitMutations(root, mutations) {
   const changed = mutations.filter((mutation) => mutation.before !== mutation.after);
   const written = [];
@@ -169,6 +191,7 @@ export async function initializeTemplate(root, options) {
     ".github/workflows/validate.yml",
     "README.md",
     "AGENTS.md",
+    TEMPLATE_STATE_PATH,
   ];
   const originals = Object.fromEntries(
     await Promise.all(paths.map(async (relativePath) => [relativePath, await read(root, relativePath)])),
@@ -184,6 +207,9 @@ export async function initializeTemplate(root, options) {
       `Refusing to initialize package ${currentName}; expected ${TEMPLATE_NAME}. Use --force only for an intentional rebrand.`,
     );
   }
+
+  const templateState = JSON.parse(originals[TEMPLATE_STATE_PATH]);
+  validateTemplateState(templateState, currentName);
 
   const tauriConfig = JSON.parse(originals["src-tauri/tauri.conf.json"]);
   const currentTitle = validateTitle(String(tauriConfig.productName ?? defaultTitle(currentName)));
@@ -201,6 +227,8 @@ export async function initializeTemplate(root, options) {
   if (tauriConfig.app?.windows?.[0]) {
     tauriConfig.app.windows[0].title = title;
   }
+  templateState.kind = "application";
+  templateState.application = { name, identifier, title };
 
   let cargoToml = replaceExactlyOnce(
     originals["src-tauri/Cargo.toml"],
@@ -300,6 +328,11 @@ export async function initializeTemplate(root, options) {
     },
     { path: "README.md", before: originals["README.md"], after: readme },
     { path: "AGENTS.md", before: originals["AGENTS.md"], after: agents },
+    {
+      path: TEMPLATE_STATE_PATH,
+      before: originals[TEMPLATE_STATE_PATH],
+      after: `${JSON.stringify(templateState, null, 2)}\n`,
+    },
   ];
 
   await commitMutations(root, mutations);
