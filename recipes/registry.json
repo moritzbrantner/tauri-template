@@ -6,9 +6,7 @@
       "title": "Scoped folder watching",
       "path": "recipes/folder-watch",
       "kind": "official-plugin",
-      "frontendDependencies": [
-        { "name": "@tauri-apps/plugin-fs", "version": "2.5.2" }
-      ],
+      "frontendDependencies": [{ "name": "@tauri-apps/plugin-fs", "version": "2.5.2" }],
       "rustDependencies": [
         { "name": "tauri-plugin-fs", "version": "=2.5.2", "features": ["watch"] }
       ],
@@ -18,18 +16,14 @@
       "scopePermission": "fs:allow-watch",
       "generatedFiles": [],
       "rustModules": [],
-      "sourceSeams": [
-        "src/platform/tauri/folder-watch.ts"
-      ]
+      "sourceSeams": ["src/platform/tauri/folder-watch.ts"]
     },
     {
       "id": "sqlite-storage",
       "title": "SQLite storage",
       "path": "recipes/sqlite-storage",
       "kind": "official-plugin",
-      "frontendDependencies": [
-        { "name": "@tauri-apps/plugin-sql", "version": "2.4.1" }
-      ],
+      "frontendDependencies": [{ "name": "@tauri-apps/plugin-sql", "version": "2.4.1" }],
       "rustDependencies": [
         { "name": "tauri-plugin-sql", "version": "=2.4.1", "features": ["sqlite"] }
       ],
@@ -38,10 +32,7 @@
       "requiresScope": false,
       "generatedFiles": [],
       "rustModules": [],
-      "sourceSeams": [
-        "src/platform/tauri/database.ts",
-        "application-owned migrations/repositories"
-      ]
+      "sourceSeams": ["src/platform/tauri/database.ts", "application-owned migrations/repositories"]
     },
     {
       "id": "background-jobs",
@@ -59,9 +50,7 @@
           "target": "src-tauri/crates/app-core/src/jobs.rs"
         }
       ],
-      "rustModules": [
-        { "path": "src-tauri/crates/app-core/src/lib.rs", "module": "jobs" }
-      ],
+      "rustModules": [{ "path": "src-tauri/crates/app-core/src/lib.rs", "module": "jobs" }],
       "sourceSeams": [
         "src-tauri/crates/app-core/src/jobs.rs",
         "src-tauri/src/jobs.rs",
@@ -81,10 +70,7 @@
         { "name": "tauri-plugin-process", "version": "=2.3.1", "features": [] },
         { "name": "tauri-plugin-updater", "version": "=2.11.0", "features": [] }
       ],
-      "plugins": [
-        "tauri_plugin_process::init()",
-        "tauri_plugin_updater::Builder::new().build()"
-      ],
+      "plugins": ["tauri_plugin_process::init()", "tauri_plugin_updater::Builder::new().build()"],
       "permissions": ["process:allow-restart", "updater:default"],
       "requiresScope": false,
       "generatedFiles": [],

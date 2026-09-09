@@ -18,7 +18,9 @@ function rustLibName(name) {
 }
 
 function sameStrings(actual, expected) {
-  return actual.length === expected.length && actual.every((value, index) => value === expected[index]);
+  return (
+    actual.length === expected.length && actual.every((value, index) => value === expected[index])
+  );
 }
 
 function assertSortedUnique(values, label) {
@@ -60,7 +62,8 @@ function assertProvenance(provenance) {
   }
   if (
     provenance.sourceRevision !== null &&
-    (typeof provenance.sourceRevision !== "string" || !/^[0-9a-f]{40}$/.test(provenance.sourceRevision))
+    (typeof provenance.sourceRevision !== "string" ||
+      !/^[0-9a-f]{40}$/.test(provenance.sourceRevision))
   ) {
     throw new Error("provenance sourceRevision must be null or a full lowercase Git commit SHA");
   }
@@ -107,12 +110,16 @@ function assertRecipePlugins(libRs, recipes) {
       return line.slice(".plugin(".length, -1);
     });
   if (!sameStrings(actual, expected)) {
-    throw new Error(`recipe plugin block drifted; expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+    throw new Error(
+      `recipe plugin block drifted; expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`,
+    );
   }
 }
 
 function assertRecipeScopes(state, recipes, capability) {
-  const permissions = new Map(capability.permissions.map((permission) => [permissionIdentifier(permission), permission]));
+  const permissions = new Map(
+    capability.permissions.map((permission) => [permissionIdentifier(permission), permission]),
+  );
   for (const recipe of recipes) {
     const config = state.recipeConfig[recipe.id] ?? {};
     if (!recipe.requiresScope) {
@@ -173,7 +180,10 @@ export async function doctor(root = process.cwd()) {
   }
   assertSortedUnique(state.activatedRecipes, "activatedRecipes");
   const configIds = Object.keys(state.recipeConfig);
-  if (!sameStrings(configIds, [...configIds].sort()) || !sameStrings(configIds, state.activatedRecipes)) {
+  if (
+    !sameStrings(configIds, [...configIds].sort()) ||
+    !sameStrings(configIds, state.activatedRecipes)
+  ) {
     throw new Error("recipeConfig keys must exactly match activatedRecipes in sorted order");
   }
 
@@ -184,8 +194,14 @@ export async function doctor(root = process.cwd()) {
     if (packageJson.name !== TEMPLATE_NAME || cargoIdentity.packageName !== TEMPLATE_NAME) {
       throw new Error("template state must retain the canonical template package identity");
     }
-    if (state.activatedRecipes.length !== 0 || state.application !== undefined || state.provenance !== undefined) {
-      throw new Error("uninitialized template state must not contain application provenance or activated recipes");
+    if (
+      state.activatedRecipes.length !== 0 ||
+      state.application !== undefined ||
+      state.provenance !== undefined
+    ) {
+      throw new Error(
+        "uninitialized template state must not contain application provenance or activated recipes",
+      );
     }
     await checkCapabilityBudget(root);
     return { kind: "template", name: TEMPLATE_NAME, recipes: [], warnings };
@@ -197,11 +213,18 @@ export async function doctor(root = process.cwd()) {
   assertProvenance(state.provenance);
 
   const identity = state.application;
-  if (!identity || typeof identity.name !== "string" || typeof identity.identifier !== "string" || typeof identity.title !== "string") {
+  if (
+    !identity ||
+    typeof identity.name !== "string" ||
+    typeof identity.identifier !== "string" ||
+    typeof identity.title !== "string"
+  ) {
     throw new Error(`${STATE_PATH} must contain application name, identifier, and title`);
   }
   if (packageJson.name !== identity.name || cargoIdentity.packageName !== identity.name) {
-    throw new Error("application package identity drifted between template state, package.json, and Cargo.toml");
+    throw new Error(
+      "application package identity drifted between template state, package.json, and Cargo.toml",
+    );
   }
   if (cargoIdentity.libName !== rustLibName(identity.name)) {
     throw new Error("Cargo library name does not match the initialized application identity");
@@ -216,7 +239,10 @@ export async function doctor(root = process.cwd()) {
   ) {
     throw new Error("Tauri product/window/bundle identity drifted from template state");
   }
-  if (!bunLock.includes(`"name": "${identity.name}"`) || !cargoLock.includes(`name = "${identity.name}"\n`)) {
+  if (
+    !bunLock.includes(`"name": "${identity.name}"`) ||
+    !cargoLock.includes(`name = "${identity.name}"\n`)
+  ) {
     throw new Error("committed dependency lock identity drifted from template state");
   }
   if (!workflow.includes(`component: ${identity.name}`)) {
@@ -234,12 +260,16 @@ export async function doctor(root = process.cwd()) {
   for (const recipe of activeRecipes) {
     for (const dependency of recipe.frontendDependencies) {
       if (packageJson.dependencies?.[dependency.name] !== dependency.version) {
-        throw new Error(`${recipe.id} frontend dependency ${dependency.name} drifted from its activation contract`);
+        throw new Error(
+          `${recipe.id} frontend dependency ${dependency.name} drifted from its activation contract`,
+        );
       }
     }
     for (const dependency of recipe.rustDependencies) {
       if (!cargoContent.split("\n").includes(cargoDependencyLine(dependency))) {
-        throw new Error(`${recipe.id} Rust dependency ${dependency.name} drifted from its activation contract`);
+        throw new Error(
+          `${recipe.id} Rust dependency ${dependency.name} drifted from its activation contract`,
+        );
       }
     }
   }

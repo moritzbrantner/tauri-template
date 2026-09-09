@@ -8,7 +8,9 @@ const STATE_PATH = ".tauri-template.json";
 const REGISTRY_PATH = "recipes/registry.json";
 
 function sameStrings(actual, expected) {
-  return actual.length === expected.length && actual.every((value, index) => value === expected[index]);
+  return (
+    actual.length === expected.length && actual.every((value, index) => value === expected[index])
+  );
 }
 
 function permissionIdentifier(permission) {
@@ -37,7 +39,9 @@ function expectedPermissions(state, registry) {
   for (const recipeId of state.activatedRecipes) {
     const recipe = recipesById.get(recipeId);
     if (!recipe) {
-      throw new Error(`activated recipe ${JSON.stringify(recipeId)} is missing from ${REGISTRY_PATH}`);
+      throw new Error(
+        `activated recipe ${JSON.stringify(recipeId)} is missing from ${REGISTRY_PATH}`,
+      );
     }
     permissions.push(...recipe.permissions);
   }
@@ -46,7 +50,9 @@ function expectedPermissions(state, registry) {
 
 export function assertDefaultCapability(capability, expectedPermissionIds = []) {
   if (capability.identifier !== "default") {
-    throw new Error(`default capability identifier must be "default", got ${JSON.stringify(capability.identifier)}`);
+    throw new Error(
+      `default capability identifier must be "default", got ${JSON.stringify(capability.identifier)}`,
+    );
   }
   if (!Array.isArray(capability.windows) || !sameStrings(capability.windows, ["main"])) {
     throw new Error('default capability must target only the "main" window');
@@ -56,7 +62,9 @@ export function assertDefaultCapability(capability, expectedPermissionIds = []) 
   }
   const actualPermissionIds = capability.permissions.map(permissionIdentifier).sort();
   if (new Set(actualPermissionIds).size !== actualPermissionIds.length) {
-    throw new Error(`default capability contains duplicate permissions: ${JSON.stringify(actualPermissionIds)}`);
+    throw new Error(
+      `default capability contains duplicate permissions: ${JSON.stringify(actualPermissionIds)}`,
+    );
   }
   if (!sameStrings(actualPermissionIds, expectedPermissionIds)) {
     throw new Error(
@@ -71,7 +79,9 @@ export function assertDefaultCapability(capability, expectedPermissionIds = []) 
 export async function checkCapabilityBudget(root = process.cwd()) {
   const capabilityDir = path.join(root, CAPABILITIES_DIR);
   const capabilityFiles = (await readdir(capabilityDir))
-    .filter((entry) => entry.endsWith(".json") || entry.endsWith(".json5") || entry.endsWith(".toml"))
+    .filter(
+      (entry) => entry.endsWith(".json") || entry.endsWith(".json5") || entry.endsWith(".toml"),
+    )
     .sort();
 
   if (!sameStrings(capabilityFiles, [DEFAULT_CAPABILITY])) {
