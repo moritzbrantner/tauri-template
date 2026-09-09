@@ -2,11 +2,20 @@
   "schemaVersion": 1,
   "profile": "repository-foundation-v1",
   "tiers": {
-    "fast": ["format:check", "lint", "template:doctor", "typecheck", "build", "test:unit"],
+    "fast": [
+      "format:check",
+      "lint",
+      "template:doctor",
+      "check:template-baseline",
+      "typecheck",
+      "build",
+      "test:unit"
+    ],
     "full": [
       "format:check",
       "lint",
       "template:doctor",
+      "check:template-baseline",
       "typecheck",
       "build",
       "test:unit",
@@ -22,6 +31,7 @@
     "format:check",
     "lint",
     "template:doctor",
+    "check:template-baseline",
     "typecheck",
     "build",
     "test:unit"
