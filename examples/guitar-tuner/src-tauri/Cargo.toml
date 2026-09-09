@@ -14,8 +14,8 @@ name = "guitar_tuner_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
-tauri-build = { version = "=2.5.6", features = [] }
+tauri-build = { version = "=2.6.3", features = [] }
 
 [dependencies]
 guitar-tuner-core = { path = "crates/guitar-tuner-core" }
-tauri = { version = "=2.10.3", features = [] }
+tauri = { version = "=2.11.5", features = [] }
