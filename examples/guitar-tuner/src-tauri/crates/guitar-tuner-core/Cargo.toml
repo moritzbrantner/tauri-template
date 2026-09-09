@@ -5,5 +5,5 @@ edition = "2021"
 publish = false
 
 [dependencies]
-audio-analysis-pitch = { package = "moenarch-audio-analysis-pitch", git = "https://github.com/moritzbrantner/audio-analysis.git", rev = "079829747543a54b9d77e0df44b91bc3c9f9352b" }
+audio-analysis-pitch = { package = "moenarch-audio-analysis-pitch", git = "https://github.com/moritzbrantner/audio-analysis.git", rev = "59bf3279811ac36e44139ffb092a979e4bfdaf24" }
 serde = { version = "=1.0.228", features = ["derive"] }
