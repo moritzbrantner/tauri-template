@@ -20,14 +20,21 @@ function centsText(reading: TuningReading | null): string {
   return `${rounded > 0 ? "+" : ""}${rounded} cents`;
 }
 
+function hasTauriRuntime(): boolean {
+  return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+}
+
 export default function App() {
   const sessionRef = useRef<MicrophoneSession | null>(null);
   const startingRef = useRef(false);
   const disposedRef = useRef(false);
+  const nativeRuntime = hasTauriRuntime();
   const [listening, setListening] = useState(false);
   const [starting, setStarting] = useState(false);
   const [reading, setReading] = useState<TuningReading | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(() =>
+    nativeRuntime ? null : "Pitch analysis is available in the Tauri desktop runtime; this page is a browser shell preview.",
+  );
 
   useEffect(() => {
     disposedRef.current = false;
@@ -39,6 +46,10 @@ export default function App() {
   }, []);
 
   async function startListening() {
+    if (!nativeRuntime) {
+      setError("Pitch analysis is available in the Tauri desktop runtime; this page is a browser shell preview.");
+      return;
+    }
     if (startingRef.current || sessionRef.current) {
       return;
     }
@@ -130,10 +141,16 @@ export default function App() {
         <button
           className="listen-button"
           type="button"
-          disabled={starting}
+          disabled={starting || !nativeRuntime}
           onClick={listening ? stopListening : startListening}
         >
-          {starting ? "Opening microphone…" : listening ? "Stop listening" : "Use microphone"}
+          {!nativeRuntime
+            ? "Native runtime required"
+            : starting
+              ? "Opening microphone…"
+              : listening
+                ? "Stop listening"
+                : "Use microphone"}
         </button>
         <p className="privacy">Audio is analyzed in memory and is not saved or sent to a server.</p>
       </section>
