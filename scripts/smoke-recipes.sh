@@ -78,6 +78,16 @@ if (JSON.stringify(watch?.allow) !== JSON.stringify([{ path: "$APPDATA/imports/*
 }
 NODE
 
+grep -q 'uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f' .github/workflows/release.yml
+grep -q 'uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262' .github/workflows/release.yml
+grep -q 'uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6' .github/workflows/release.yml
+node --check scripts/verify-release-version.mjs
+
+if node scripts/verify-release-version.mjs v0.1.0; then
+  echo "release preflight accepted active updater state without app-owned signing/configuration" >&2
+  exit 1
+fi
+
 bun install --frozen-lockfile
 bun run verify:fast
 bun run verify:native
