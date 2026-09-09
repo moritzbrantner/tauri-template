@@ -1,0 +1,9 @@
+[package]
+name = "guitar-tuner-core"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+audio-analysis-pitch = { package = "moenarch-audio-analysis-pitch", git = "https://github.com/moritzbrantner/audio-analysis.git", rev = "506b4b4bde0aee5b90dc4160c39e502b4d28733d" }
+serde = { version = "=1.0.228", features = ["derive"] }
