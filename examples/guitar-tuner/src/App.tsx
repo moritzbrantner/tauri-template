@@ -40,7 +40,7 @@ export default function App() {
     disposedRef.current = false;
     return () => {
       disposedRef.current = true;
-      void sessionRef.current?.stop();
+      sessionRef.current?.stop().catch(() => undefined);
       sessionRef.current = null;
     };
   }, []);
