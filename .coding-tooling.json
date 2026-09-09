@@ -26,10 +26,5 @@
     "build",
     "test:unit"
   ],
-  "optionalCapabilities": [
-    "test:e2e",
-    "test:native-runtime",
-    "recipes:smoke",
-    "template:smoke"
-  ]
+  "optionalCapabilities": ["test:e2e", "test:native-runtime", "recipes:smoke", "template:smoke"]
 }

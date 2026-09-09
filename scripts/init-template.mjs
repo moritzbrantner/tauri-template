@@ -130,11 +130,15 @@ function validateTemplateState(state, currentName) {
     typeof state.templateRepository !== "string" ||
     !Array.isArray(state.activatedRecipes)
   ) {
-    throw new Error(`${TEMPLATE_STATE_PATH} must use schema version 1 with templateRepository and activatedRecipes`);
+    throw new Error(
+      `${TEMPLATE_STATE_PATH} must use schema version 1 with templateRepository and activatedRecipes`,
+    );
   }
   if (currentName === TEMPLATE_NAME) {
     if (state.kind !== "template" || state.activatedRecipes.length !== 0) {
-      throw new Error(`${TEMPLATE_STATE_PATH} must describe an unmodified template before first initialization`);
+      throw new Error(
+        `${TEMPLATE_STATE_PATH} must describe an unmodified template before first initialization`,
+      );
     }
     return;
   }
@@ -194,7 +198,9 @@ export async function initializeTemplate(root, options) {
     TEMPLATE_STATE_PATH,
   ];
   const originals = Object.fromEntries(
-    await Promise.all(paths.map(async (relativePath) => [relativePath, await read(root, relativePath)])),
+    await Promise.all(
+      paths.map(async (relativePath) => [relativePath, await read(root, relativePath)]),
+    ),
   );
 
   const packageJson = JSON.parse(originals["package.json"]);
@@ -310,7 +316,11 @@ export async function initializeTemplate(root, options) {
   }
 
   const mutations = [
-    { path: "package.json", before: originals["package.json"], after: `${JSON.stringify(packageJson, null, 2)}\n` },
+    {
+      path: "package.json",
+      before: originals["package.json"],
+      after: `${JSON.stringify(packageJson, null, 2)}\n`,
+    },
     {
       path: "src-tauri/tauri.conf.json",
       before: originals["src-tauri/tauri.conf.json"],

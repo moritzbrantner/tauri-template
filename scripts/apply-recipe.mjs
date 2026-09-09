@@ -43,7 +43,9 @@ function parseArgs(argv) {
   }
 
   if (!options.recipeId) {
-    throw new Error("usage: bun run recipe:add -- <recipe-id> [--scope <tauri-path-scope>] [--dry-run]");
+    throw new Error(
+      "usage: bun run recipe:add -- <recipe-id> [--scope <tauri-path-scope>] [--dry-run]",
+    );
   }
   return options;
 }
@@ -72,7 +74,9 @@ async function readOptional(root, relativePath) {
 }
 
 function sortedObject(object) {
-  return Object.fromEntries(Object.entries(object).sort(([left], [right]) => left.localeCompare(right)));
+  return Object.fromEntries(
+    Object.entries(object).sort(([left], [right]) => left.localeCompare(right)),
+  );
 }
 
 function cargoDependencyLine(dependency) {
@@ -180,7 +184,9 @@ function configuredPermissions(recipe, scope) {
     return recipe.permissions;
   }
   if (!scope) {
-    throw new Error(`${recipe.id} requires --scope with the narrow Tauri path pattern the app should watch`);
+    throw new Error(
+      `${recipe.id} requires --scope with the narrow Tauri path pattern the app should watch`,
+    );
   }
   if (!recipe.scopePermission || !recipe.permissions.includes(recipe.scopePermission)) {
     throw new Error(`${recipe.id} declares requiresScope without a valid scopePermission`);
@@ -330,7 +336,9 @@ export async function planRecipe(root, recipeId, { scope = null } = {}) {
     typeof state.recipeConfig !== "object" ||
     Array.isArray(state.recipeConfig)
   ) {
-    throw new Error(`${STATE_PATH} does not describe an initialized application with recipe configuration`);
+    throw new Error(
+      `${STATE_PATH} does not describe an initialized application with recipe configuration`,
+    );
   }
 
   if (state.activatedRecipes.includes(recipe.id)) {
@@ -351,7 +359,8 @@ export async function planRecipe(root, recipeId, { scope = null } = {}) {
 
   packageJson.dependencies ??= {};
   for (const dependency of recipe.frontendDependencies) {
-    const existing = packageJson.dependencies[dependency.name] ?? packageJson.devDependencies?.[dependency.name];
+    const existing =
+      packageJson.dependencies[dependency.name] ?? packageJson.devDependencies?.[dependency.name];
     if (existing !== undefined && existing !== dependency.version) {
       throw new Error(
         `${PACKAGE_PATH} already declares ${dependency.name}@${existing}; refusing to overwrite application-owned dependency policy`,
@@ -374,7 +383,9 @@ export async function planRecipe(root, recipeId, { scope = null } = {}) {
   const activePlugins = state.activatedRecipes.flatMap((activeRecipeId) => {
     const activeRecipe = recipesById.get(activeRecipeId);
     if (!activeRecipe) {
-      throw new Error(`activated recipe ${JSON.stringify(activeRecipeId)} is missing from ${REGISTRY_PATH}`);
+      throw new Error(
+        `activated recipe ${JSON.stringify(activeRecipeId)} is missing from ${REGISTRY_PATH}`,
+      );
     }
     return activeRecipe.plugins;
   });
@@ -390,7 +401,11 @@ export async function planRecipe(root, recipeId, { scope = null } = {}) {
   addMutation(PACKAGE_PATH, originals[PACKAGE_PATH], `${JSON.stringify(packageJson, null, 2)}\n`);
   addMutation(CARGO_PATH, originals[CARGO_PATH], cargoToml);
   addMutation(LIB_PATH, originals[LIB_PATH], libRs);
-  addMutation(CAPABILITY_PATH, originals[CAPABILITY_PATH], `${JSON.stringify(capability, null, 2)}\n`);
+  addMutation(
+    CAPABILITY_PATH,
+    originals[CAPABILITY_PATH],
+    `${JSON.stringify(capability, null, 2)}\n`,
+  );
   addMutation(STATE_PATH, originals[STATE_PATH], `${JSON.stringify(state, null, 2)}\n`);
 
   for (const generatedFile of recipe.generatedFiles) {
@@ -464,9 +479,12 @@ export async function applyRecipe(root, recipeId, { dryRun = false, scope = null
     await writeFile(path.join(root, BUN_LOCK_PATH), lockBackups[BUN_LOCK_PATH], "utf8");
     await writeFile(path.join(root, CARGO_LOCK_PATH), lockBackups[CARGO_LOCK_PATH], "utf8");
     if (rollbackError) {
-      throw new Error(`Recipe activation failed and rollback was incomplete: ${String(rollbackError)}`, {
-        cause: error,
-      });
+      throw new Error(
+        `Recipe activation failed and rollback was incomplete: ${String(rollbackError)}`,
+        {
+          cause: error,
+        },
+      );
     }
     throw error;
   }
