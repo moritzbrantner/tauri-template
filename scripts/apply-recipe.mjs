@@ -294,10 +294,33 @@ async function commitMutations(root, mutations) {
   return applied;
 }
 
+function validateRecipeSchema(recipe) {
+  if (
+    !Array.isArray(recipe.frontendDependencies) ||
+    !Array.isArray(recipe.rustDependencies) ||
+    !Array.isArray(recipe.plugins) ||
+    !Array.isArray(recipe.permissions) ||
+    !Array.isArray(recipe.generatedFiles) ||
+    !Array.isArray(recipe.rustModules) ||
+    !Array.isArray(recipe.validationCommands) ||
+    !Array.isArray(recipe.sourceSeams)
+  ) {
+    throw new Error(`recipe ${JSON.stringify(recipe.id)} does not satisfy executable recipe schema version 2`);
+  }
+  for (const command of recipe.validationCommands) {
+    if (!Array.isArray(command) || command.length === 0 || command.some((part) => typeof part !== "string" || !part)) {
+      throw new Error(`recipe ${JSON.stringify(recipe.id)} contains an invalid validation command`);
+    }
+  }
+}
+
 async function loadRegistryAndRecipe(root, recipeId) {
   const registry = JSON.parse(await read(root, REGISTRY_PATH));
   if (registry.schemaVersion !== 2 || !Array.isArray(registry.recipes)) {
     throw new Error(`${REGISTRY_PATH} must use executable recipe schema version 2`);
+  }
+  for (const candidate of registry.recipes) {
+    validateRecipeSchema(candidate);
   }
   const recipe = registry.recipes.find((candidate) => candidate.id === recipeId);
   if (!recipe) {
@@ -429,6 +452,7 @@ export async function applyRecipe(root, recipeId, { dryRun = false, scope = null
     rustDependencies: plan.recipe.rustDependencies,
     plugins: plan.recipe.plugins,
     permissions: plan.permissions,
+    validationCommands: plan.recipe.validationCommands,
     sourceSeams: plan.recipe.sourceSeams,
     requiresScope: plan.recipe.requiresScope,
   };
@@ -454,6 +478,9 @@ export async function applyRecipe(root, recipeId, { dryRun = false, scope = null
       run("cargo", ["check", "--manifest-path", CARGO_PATH, "--locked"], root);
     }
     run("node", ["./scripts/check-capability-budget.mjs"], root);
+    for (const [command, ...args] of plan.recipe.validationCommands) {
+      run(command, args, root);
+    }
   } catch (error) {
     let rollbackError = null;
     try {

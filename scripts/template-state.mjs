@@ -1,19 +1,34 @@
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { readFile } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 
-const FINGERPRINT_FILES = [
+const BASE_FINGERPRINT_FILES = [
   ".bun-version",
   ".coding-tooling.json",
   "conventions.lock.json",
-  "recipes/registry.json",
   "rust-toolchain.toml",
   "scripts/init-template.mjs",
-].sort();
+];
 
 async function read(root, relativePath) {
   return readFile(path.join(root, relativePath), "utf8");
+}
+
+async function listFiles(root, relativeDirectory) {
+  const directory = path.join(root, relativeDirectory);
+  const entries = await readdir(directory, { withFileTypes: true });
+  const files = [];
+
+  for (const entry of entries) {
+    const relativePath = path.posix.join(relativeDirectory, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...(await listFiles(root, relativePath)));
+    } else if (entry.isFile()) {
+      files.push(relativePath);
+    }
+  }
+  return files;
 }
 
 export async function readToolchainPins(root) {
@@ -30,8 +45,11 @@ export async function readToolchainPins(root) {
 }
 
 export async function fingerprintTemplateSource(root) {
+  const recipeFiles = await listFiles(root, "recipes");
+  const fingerprintFiles = [...new Set([...BASE_FINGERPRINT_FILES, ...recipeFiles])].sort();
   const hash = createHash("sha256");
-  for (const relativePath of FINGERPRINT_FILES) {
+
+  for (const relativePath of fingerprintFiles) {
     hash.update(relativePath);
     hash.update("\0");
     hash.update(await read(root, relativePath));
