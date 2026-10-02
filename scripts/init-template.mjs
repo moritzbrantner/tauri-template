@@ -16,8 +16,10 @@ const APPLICATION_DISCIPLINE =
   "## Application discipline\n\nUse opt-in recipes or focused crates/packages for cross-cutting native capabilities. Keep application-specific behavior local unless it has demonstrated reuse across projects.";
 
 export function validatePackageName(value) {
-  if (!/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(value) || value.length > 64) {
-    throw new Error("--name must be 1-64 lowercase ASCII letters, digits, or internal hyphens");
+  if (!/^[a-z](?:[a-z0-9-]*[a-z0-9])?$/.test(value) || value.length > 64) {
+    throw new Error(
+      "--name must be 1-64 lowercase ASCII letters, digits, or internal hyphens, starting with a letter",
+    );
   }
   return value;
 }
