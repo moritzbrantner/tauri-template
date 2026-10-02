@@ -58,13 +58,13 @@ jobs:
         run: cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
 
       - name: Run Clippy
-        run: cargo clippy --manifest-path src-tauri/Cargo.toml --locked --all-targets --all-features -- -D warnings
+        run: cargo clippy --manifest-path src-tauri/Cargo.toml --workspace --locked --all-targets --all-features -- -D warnings
 
       - name: Check Rust workspace
-        run: cargo check --manifest-path src-tauri/Cargo.toml --locked
+        run: cargo check --manifest-path src-tauri/Cargo.toml --workspace --locked
 
       - name: Run Rust tests
-        run: cargo test --manifest-path src-tauri/Cargo.toml --locked
+        run: cargo test --manifest-path src-tauri/Cargo.toml --workspace --locked
 
       - name: Build Rust workspace
         run: cargo build --manifest-path src-tauri/Cargo.toml --locked
