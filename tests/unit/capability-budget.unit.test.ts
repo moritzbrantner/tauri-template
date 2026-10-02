@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   assertDefaultCapability,
+  assertNoInlineCapabilities,
   checkCapabilityBudget,
 } from "../../scripts/check-capability-budget.mjs";
 
@@ -22,5 +23,17 @@ describe("default capability budget", () => {
     expect(() =>
       assertDefaultCapability({ ...zeroPermissionCapability, remote: { urls: ["https://x"] } }),
     ).toThrow(/remote origins/);
+  });
+
+  it("rejects inline capabilities declared in tauri.conf.json", () => {
+    expect(() => assertNoInlineCapabilities({ app: {} })).not.toThrow();
+    expect(() =>
+      assertNoInlineCapabilities({ app: { security: { capabilities: ["default"] } } }),
+    ).not.toThrow();
+    expect(() =>
+      assertNoInlineCapabilities({
+        app: { security: { capabilities: [{ identifier: "x", permissions: ["core:default"] }] } },
+      }),
+    ).toThrow(/may only reference the "default" capability file/);
   });
 });
