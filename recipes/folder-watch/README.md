@@ -29,12 +29,14 @@ Watching is permission- and scope-gated. Grant only watch/unwatch plus paths the
   "permissions": [
     {
       "identifier": "fs:allow-watch",
-      "allow": [{ "path": "$APPDATA/imports/**/*" }]
+      "allow": [{ "path": "$APPDATA/imports" }, { "path": "$APPDATA/imports/**/*" }]
     },
     "fs:allow-unwatch"
   ]
 }
 ```
+
+The exact `$APPDATA/imports` entry authorizes watching the directory itself; the glob only matches its descendants.
 
 For arbitrary user-selected directories, derive the runtime scope deliberately rather than granting `$HOME/**/*` as a convenience default.
 

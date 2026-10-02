@@ -8,6 +8,9 @@ mod tests {
 
     #[test]
     fn greeting_formats_the_name() {
-        assert_eq!(greeting("Ada"), "Hello, Ada! You've been greeted from Rust!");
+        assert_eq!(
+            greeting("Ada"),
+            "Hello, Ada! You've been greeted from Rust!"
+        );
     }
 }
