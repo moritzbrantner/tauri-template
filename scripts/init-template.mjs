@@ -118,7 +118,12 @@ function cargoIdentity(cargoToml) {
   if (!packageMatch || !libMatch) {
     throw new Error("src-tauri/Cargo.toml must declare both [package] and [lib] names");
   }
-  return { packageName: packageMatch[1], libName: libMatch[1] };
+  const packageSection = cargoToml.slice(packageMatch.index).split(/\n\[/, 1)[0];
+  const versionMatch = packageSection.match(/\nversion = "([^"]+)"/);
+  if (!versionMatch) {
+    throw new Error("src-tauri/Cargo.toml must declare a literal [package] version");
+  }
+  return { packageName: packageMatch[1], libName: libMatch[1], version: versionMatch[1] };
 }
 
 function applicationAgentSentence(name) {
@@ -131,8 +136,10 @@ async function commitMutations(root, mutations) {
 
   try {
     for (const mutation of changed) {
-      await writeFile(path.join(root, mutation.path), mutation.after, "utf8");
+      // Track the mutation before writing: a rejected write may already have
+      // truncated or partially written the file, so it must be restored too.
       written.push(mutation);
+      await writeFile(path.join(root, mutation.path), mutation.after, "utf8");
     }
   } catch (error) {
     const rollbackErrors = [];
@@ -227,8 +234,8 @@ export async function initializeTemplate(root, options) {
   );
   const cargoLock = replaceExactlyOnce(
     originals["src-tauri/Cargo.lock"],
-    `name = "${currentName}"\nversion = "0.1.0"`,
-    `name = "${name}"\nversion = "0.1.0"`,
+    `name = "${currentName}"\nversion = "${currentCargoIdentity.version}"`,
+    `name = "${name}"\nversion = "${currentCargoIdentity.version}"`,
     "src-tauri/Cargo.lock",
   );
   const bunLock = replaceExactlyOnce(
