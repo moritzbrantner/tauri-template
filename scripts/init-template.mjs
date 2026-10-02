@@ -6,8 +6,10 @@ const TEMPLATE_NAME = "tauri-template";
 const TEMPLATE_LIB_NAME = "tauri_template_lib";
 
 export function validatePackageName(value) {
-  if (!/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(value) || value.length > 64) {
-    throw new Error("--name must be 1-64 lowercase ASCII letters, digits, or internal hyphens");
+  if (!/^[a-z](?:[a-z0-9-]*[a-z0-9])?$/.test(value) || value.length > 64) {
+    throw new Error(
+      "--name must be 1-64 lowercase ASCII letters, digits, or internal hyphens, starting with a letter",
+    );
   }
   return value;
 }

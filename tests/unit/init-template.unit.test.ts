@@ -24,6 +24,8 @@ describe("template initializer", () => {
     expect(() => validatePackageName("-media")).toThrow(
       "--name must be 1-64 lowercase ASCII letters, digits, or internal hyphens",
     );
+    // Cargo rejects package names that start with a digit.
+    expect(() => validatePackageName("1-app")).toThrow("starting with a letter");
     expect(() => validateIdentifier("media-workbench")).toThrow(
       "--identifier must use reverse-domain-like non-empty segments without leading/trailing hyphens",
     );
