@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   assertDefaultCapability,
+  assertNoInlineCapabilities,
+  assertPermissionBodies,
   checkCapabilityBudget,
 } from "../../scripts/check-capability-budget.mjs";
 
@@ -30,5 +32,48 @@ describe("default capability budget", () => {
         "dialog:default",
       ]),
     ).not.toThrow();
+  });
+
+  it("rejects inline capabilities declared in tauri.conf.json", () => {
+    expect(() => assertNoInlineCapabilities({ app: {} })).not.toThrow();
+    expect(() =>
+      assertNoInlineCapabilities({ app: { security: { capabilities: ["default"] } } }),
+    ).not.toThrow();
+    expect(() =>
+      assertNoInlineCapabilities({
+        app: { security: { capabilities: [{ identifier: "x", permissions: ["core:default"] }] } },
+      }),
+    ).toThrow(/may only reference the "default" capability file/);
+  });
+
+  it("requires scoped permissions to match the recorded recipe scope", () => {
+    const scoped = new Map([
+      ["fs:allow-watch", { identifier: "fs:allow-watch", allow: [{ path: "$APPDATA/imports" }] }],
+    ]);
+    const capability = (watch: unknown) => ({
+      ...zeroPermissionCapability,
+      permissions: ["fs:allow-unwatch", watch],
+    });
+    expect(() =>
+      assertPermissionBodies(
+        capability({ allow: [{ path: "$APPDATA/imports" }], identifier: "fs:allow-watch" }),
+        scoped,
+      ),
+    ).not.toThrow();
+    expect(() =>
+      assertPermissionBodies(
+        capability({ identifier: "fs:allow-watch", allow: [{ path: "$HOME/**/*" }] }),
+        scoped,
+      ),
+    ).toThrow(/must match the recorded recipe scope/);
+    expect(() =>
+      assertPermissionBodies(
+        {
+          ...zeroPermissionCapability,
+          permissions: [{ identifier: "fs:allow-unwatch", allow: [{ path: "$HOME" }] }],
+        },
+        new Map(),
+      ),
+    ).toThrow(/must not carry its own scope/);
   });
 });

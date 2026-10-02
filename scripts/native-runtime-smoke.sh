@@ -97,14 +97,23 @@ find_element() {
   local selector="$1"
   local payload response element_id
   payload="$(jq -cn --arg selector "$selector" '{using: "css selector", value: $selector}')"
-  response="$(
-    curl -fsS \
-      -H 'content-type: application/json' \
-      -X POST \
-      --data "$payload" \
-      "http://127.0.0.1:4444/session/$session_id/element"
-  )"
-  element_id="$(jq -r '.value["element-6066-11e4-a52e-4f735466cecf"] // .value.ELEMENT // empty' <<<"$response")"
+  element_id=""
+  # The session can exist before React has mounted; "no such element" is a
+  # normal 404 then, so retry instead of failing on the first lookup.
+  for _ in $(seq 1 40); do
+    response="$(
+      curl -sS \
+        -H 'content-type: application/json' \
+        -X POST \
+        --data "$payload" \
+        "http://127.0.0.1:4444/session/$session_id/element" || true
+    )"
+    element_id="$(jq -r '.value["element-6066-11e4-a52e-4f735466cecf"] // .value.ELEMENT // empty' <<<"$response" 2>/dev/null || true)"
+    if [[ -n "$element_id" ]]; then
+      break
+    fi
+    sleep 0.25
+  done
   if [[ -z "$element_id" ]]; then
     echo "failed to find $selector: $response" >&2
     exit 1

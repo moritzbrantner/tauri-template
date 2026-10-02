@@ -6,6 +6,7 @@ const CAPABILITIES_DIR = "src-tauri/capabilities";
 const DEFAULT_CAPABILITY = "default.json";
 const STATE_PATH = ".tauri-template.json";
 const REGISTRY_PATH = "recipes/registry.json";
+const TAURI_CONFIG = "src-tauri/tauri.conf.json";
 
 function sameStrings(actual, expected) {
   return (
@@ -76,7 +77,81 @@ export function assertDefaultCapability(capability, expectedPermissionIds = []) 
   }
 }
 
+export function assertNoInlineCapabilities(tauriConfig) {
+  const configured = tauriConfig?.app?.security?.capabilities;
+  if (configured === undefined) {
+    return;
+  }
+  if (!Array.isArray(configured) || !configured.every((entry) => entry === "default")) {
+    throw new Error(
+      `${TAURI_CONFIG} app.security.capabilities may only reference the "default" capability file; got ${JSON.stringify(configured)}`,
+    );
+  }
+}
+
+function canonicalJson(value) {
+  if (Array.isArray(value)) {
+    return `[${value.map(canonicalJson).join(",")}]`;
+  }
+  if (value && typeof value === "object") {
+    return `{${Object.keys(value)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${canonicalJson(value[key])}`)
+      .join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function expectedScopedPermissions(state, registry) {
+  const scoped = new Map();
+  if (state.kind !== "application") {
+    return scoped;
+  }
+  const recipesById = new Map(registry.recipes.map((recipe) => [recipe.id, recipe]));
+  for (const recipeId of state.activatedRecipes) {
+    const recipe = recipesById.get(recipeId);
+    if (!recipe?.requiresScope) {
+      continue;
+    }
+    const scope = state.recipeConfig?.[recipeId]?.scope;
+    if (typeof scope !== "string" || !scope) {
+      throw new Error(`${STATE_PATH} recipeConfig.${recipeId}.scope must record the granted scope`);
+    }
+    const expected = { identifier: recipe.scopePermission, allow: [{ path: scope }] };
+    const existing = scoped.get(recipe.scopePermission);
+    if (existing && canonicalJson(existing) !== canonicalJson(expected)) {
+      throw new Error(`activated recipes declare conflicting scopes for ${recipe.scopePermission}`);
+    }
+    scoped.set(recipe.scopePermission, expected);
+  }
+  return scoped;
+}
+
+// Identifiers alone would let a recorded scope drift (e.g. to $HOME/**/*), so
+// scoped permissions must match the scope recorded in recipeConfig exactly and
+// every other permission must be a plain, unscoped identifier.
+export function assertPermissionBodies(capability, scopedPermissions) {
+  for (const permission of capability.permissions) {
+    const identifier = permissionIdentifier(permission);
+    const expected = scopedPermissions.get(identifier);
+    if (expected === undefined) {
+      if (typeof permission !== "string") {
+        throw new Error(
+          `default capability permission ${identifier} must not carry its own scope; got ${JSON.stringify(permission)}`,
+        );
+      }
+      continue;
+    }
+    if (canonicalJson(permission) !== canonicalJson(expected)) {
+      throw new Error(
+        `default capability permission ${identifier} must match the recorded recipe scope ${JSON.stringify(expected)}; got ${JSON.stringify(permission)}`,
+      );
+    }
+  }
+}
+
 export async function checkCapabilityBudget(root = process.cwd()) {
+  assertNoInlineCapabilities(JSON.parse(await readFile(path.join(root, TAURI_CONFIG), "utf8")));
   const capabilityDir = path.join(root, CAPABILITIES_DIR);
   const capabilityFiles = (await readdir(capabilityDir))
     .filter(
@@ -107,6 +182,7 @@ export async function checkCapabilityBudget(root = process.cwd()) {
   }
 
   assertDefaultCapability(capability, expectedPermissions(state, registry));
+  assertPermissionBodies(capability, expectedScopedPermissions(state, registry));
 }
 
 const invokedPath = process.argv[1] ? pathToFileURL(path.resolve(process.argv[1])).href : null;
