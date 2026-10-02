@@ -290,8 +290,9 @@ async function commitMutations(root, mutations) {
       }
       const absolutePath = path.join(root, mutation.path);
       await mkdir(path.dirname(absolutePath), { recursive: true });
-      await writeFile(absolutePath, mutation.after, "utf8");
+      // Track before writing so a partially written file is rolled back too.
       applied.push(mutation);
+      await writeFile(absolutePath, mutation.after, "utf8");
     }
   } catch (error) {
     await rollbackMutations(root, applied);
@@ -490,6 +491,15 @@ export async function applyRecipe(root, recipeId, { dryRun = false, scope = null
   const applied = await commitMutations(root, plan.mutations);
 
   try {
+    // Mutations are serialized with JSON.stringify; normalize them with the
+    // project's formatter so the application still passes format:check.
+    const formattable = applied
+      .filter((mutation) => mutation.after !== null)
+      .map((mutation) => mutation.path)
+      .filter((relativePath) => /\.(?:json|[cm]?[jt]sx?)$/.test(relativePath));
+    if (formattable.length > 0) {
+      run("bun", ["x", "oxfmt", ...formattable], root);
+    }
     if (plan.recipe.frontendDependencies.length > 0) {
       run("bun", ["install"], root);
       run("bun", ["install", "--frozen-lockfile"], root);
