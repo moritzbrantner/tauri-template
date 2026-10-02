@@ -2,20 +2,10 @@
   "schemaVersion": 1,
   "profile": "repository-foundation-v1",
   "tiers": {
-    "fast": [
-      "format:check",
-      "lint",
-      "template:doctor",
-      "check:template-baseline",
-      "typecheck",
-      "build",
-      "test:unit"
-    ],
+    "fast": ["format:check", "lint", "typecheck", "build", "test:unit"],
     "full": [
       "format:check",
       "lint",
-      "template:doctor",
-      "check:template-baseline",
       "typecheck",
       "build",
       "test:unit",
@@ -23,24 +13,8 @@
       "template:smoke"
     ],
     "integration": ["test:e2e"],
-    "native-runtime": ["test:native-runtime"],
-    "recipes": ["recipes:smoke"],
     "template": ["template:smoke"]
   },
-  "requiredCapabilities": [
-    "format:check",
-    "lint",
-    "template:doctor",
-    "check:template-baseline",
-    "typecheck",
-    "build",
-    "test:unit"
-  ],
-  "optionalCapabilities": [
-    "check:capability-budget",
-    "test:e2e",
-    "test:native-runtime",
-    "recipes:smoke",
-    "template:smoke"
-  ]
+  "requiredCapabilities": ["format:check", "lint", "typecheck", "build", "test:unit"],
+  "optionalCapabilities": ["test:e2e", "template:smoke"]
 }

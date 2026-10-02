@@ -54,7 +54,7 @@
       ],
       "rustModules": [{ "path": "src-tauri/crates/app-core/src/lib.rs", "module": "jobs" }],
       "validationCommands": [
-        ["cargo", "test", "--manifest-path", "src-tauri/Cargo.toml", "--locked"]
+        ["cargo", "test", "--manifest-path", "src-tauri/Cargo.toml", "--workspace", "--locked"]
       ],
       "sourceSeams": [
         "src-tauri/crates/app-core/src/jobs.rs",
