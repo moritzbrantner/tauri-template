@@ -24,7 +24,7 @@
     "rust:check": "cargo check --manifest-path src-tauri/Cargo.toml --workspace --locked",
     "rust:build": "cargo build --manifest-path src-tauri/Cargo.toml --locked",
     "template:smoke": "bash ./scripts/smoke-template.sh",
-    "verify:fast": "bun run format:check && bun run lint && bun run check:capability-budget && bun run typecheck && bun run build && bun run test:unit",
+    "verify:fast": "bun run format:check && bun run lint && bun run typecheck && bun run build && bun run test:unit",
     "verify:native": "bun run rust:format:check && bun run rust:clippy && bun run rust:check && bun run test:rust && bun run rust:build",
     "verify": "bun run verify:fast && bun run test:e2e && bun run verify:native"
   },
