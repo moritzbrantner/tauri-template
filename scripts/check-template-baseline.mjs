@@ -27,24 +27,43 @@ function assertStringSet(actual, expected, label) {
   }
 }
 
-function cargoDependencyNames(cargoToml) {
-  const lines = cargoToml.split("\n");
-  const start = lines.indexOf("[dependencies]");
-  if (start === -1) {
-    return [];
-  }
-  const names = [];
-  for (let index = start + 1; index < lines.length; index += 1) {
-    const line = lines[index];
-    if (/^\[[^\]]+\]/.test(line)) {
-      break;
+const TOML_KEY = String.raw`(?:"[^"]+"|'[^']+'|[A-Za-z0-9_-]+)`;
+const NORMAL_DEPENDENCY_TABLE = new RegExp(
+  String.raw`^(?:target\.${TOML_KEY}\.)?dependencies(?:\.(${TOML_KEY}))?$`,
+);
+const DEPENDENCY_KEY = new RegExp(String.raw`^(${TOML_KEY})\s*(?:=|\.)`);
+
+function unquote(key) {
+  return key.replace(/^["']|["']$/g, "");
+}
+
+// Collects normal (non-dev, non-build) dependency names from every form Cargo
+// accepts: [dependencies], [dependencies.<name>], dotted keys such as
+// `tauri.workspace = true`, and target-specific [target.<cfg>.dependencies] tables.
+export function cargoDependencyNames(cargoToml) {
+  const names = new Set();
+  let inDependencyTable = false;
+  for (const rawLine of cargoToml.split("\n")) {
+    const line = rawLine.trim();
+    if (line.startsWith("[")) {
+      inDependencyTable = false;
+      const header = line.match(/^\[\s*([^[\]]+?)\s*\](?:\s*#.*)?$/);
+      const table = header?.[1].match(NORMAL_DEPENDENCY_TABLE);
+      if (table?.[1]) {
+        names.add(unquote(table[1]));
+      } else if (table) {
+        inDependencyTable = true;
+      }
+      continue;
     }
-    const match = line.match(/^([A-Za-z0-9_-]+)\s*=/);
-    if (match) {
-      names.push(match[1]);
+    if (inDependencyTable) {
+      const key = line.match(DEPENDENCY_KEY);
+      if (key) {
+        names.add(unquote(key[1]));
+      }
     }
   }
-  return names;
+  return [...names];
 }
 
 function tauriPluginExpressions(libRs) {
@@ -70,8 +89,10 @@ async function listFiles(root, relativeDirectory) {
   return files;
 }
 
-function isNativeFrontendImport(content) {
-  return /from\s+["']@tauri-apps\/(?:api|plugin-)/.test(content);
+// Static (`from "..."`), side-effect (`import "..."`) and dynamic (`import("...")`)
+// module specifiers, plus `export ... from "..."`.
+export function isNativeFrontendImport(content) {
+  return /(?:\bfrom|\bimport)\s*\(?\s*["'`]@tauri-apps\/(?:api|plugin-)/.test(content);
 }
 
 export async function checkTemplateBaseline(root = process.cwd()) {
@@ -140,6 +161,15 @@ export async function checkTemplateBaseline(root = process.cwd()) {
   if (cargoDependencyNames(appCoreCargo).length !== 0) {
     throw new Error("default app-core must remain framework-independent and dependency-free");
   }
+
+  const capability = JSON.parse(await read(root, "src-tauri/capabilities/default.json"));
+  assertStringSet(
+    (capability.permissions ?? []).map((permission) =>
+      typeof permission === "string" ? permission : permission?.identifier,
+    ),
+    baseline.defaultPermissions,
+    "default capability permissions",
+  );
 
   await checkCapabilityBudget(root);
   return { enforced: true, reason: "template baseline matches declared budget" };
