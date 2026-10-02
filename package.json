@@ -7,7 +7,7 @@
     "dev": "vite",
     "format": "oxfmt src tests scripts/init-template.mjs package.json tsconfig.json tsconfig.node.json vite.config.ts vitest.unit.config.ts playwright.config.ts .coding-tooling.json conventions.json",
     "format:check": "oxfmt --check src tests scripts/init-template.mjs package.json tsconfig.json tsconfig.node.json vite.config.ts vitest.unit.config.ts playwright.config.ts .coding-tooling.json conventions.json",
-    "lint": "oxlint src tests scripts/init-template.mjs vite.config.ts vitest.unit.config.ts playwright.config.ts",
+    "lint": "oxlint --type-aware -c .oxlintrc.json src tests scripts/init-template.mjs vite.config.ts vitest.unit.config.ts playwright.config.ts",
     "typecheck": "tsc --noEmit",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
