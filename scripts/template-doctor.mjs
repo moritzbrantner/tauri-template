@@ -142,6 +142,39 @@ function assertRecipeScopes(state, recipes, capability) {
   }
 }
 
+function assertIdentity(
+  identity,
+  { packageJson, cargoIdentity, mainRs, tauriConfig, bunLock, cargoLock, workflow },
+) {
+  if (packageJson.name !== identity.name || cargoIdentity.packageName !== identity.name) {
+    throw new Error(
+      "application package identity drifted between template state, package.json, and Cargo.toml",
+    );
+  }
+  if (cargoIdentity.libName !== rustLibName(identity.name)) {
+    throw new Error("Cargo library name does not match the initialized application identity");
+  }
+  if (!mainRs.includes(`${cargoIdentity.libName}::run()`)) {
+    throw new Error("Rust binary entry point does not call the initialized library name");
+  }
+  if (
+    tauriConfig.productName !== identity.title ||
+    tauriConfig.identifier !== identity.identifier ||
+    tauriConfig.app?.windows?.[0]?.title !== identity.title
+  ) {
+    throw new Error("Tauri product/window/bundle identity drifted from template state");
+  }
+  if (
+    !bunLock.includes(`"name": "${identity.name}"`) ||
+    !cargoLock.includes(`name = "${identity.name}"\n`)
+  ) {
+    throw new Error("committed dependency lock identity drifted from template state");
+  }
+  if (!workflow.includes(`component: ${identity.name}`)) {
+    throw new Error("coding-tooling workflow component drifted from application identity");
+  }
+}
+
 export async function doctor(root = process.cwd()) {
   const [
     stateContent,
@@ -203,6 +236,11 @@ export async function doctor(root = process.cwd()) {
         "uninitialized template state must not contain application provenance or activated recipes",
       );
     }
+    // The initializer replaces these markers, so validate them before first use.
+    assertIdentity(
+      { name: TEMPLATE_NAME, title: tauriConfig.productName, identifier: tauriConfig.identifier },
+      { packageJson, cargoIdentity, mainRs, tauriConfig, bunLock, cargoLock, workflow },
+    );
     await checkCapabilityBudget(root);
     return { kind: "template", name: TEMPLATE_NAME, recipes: [], warnings };
   }
@@ -221,33 +259,15 @@ export async function doctor(root = process.cwd()) {
   ) {
     throw new Error(`${STATE_PATH} must contain application name, identifier, and title`);
   }
-  if (packageJson.name !== identity.name || cargoIdentity.packageName !== identity.name) {
-    throw new Error(
-      "application package identity drifted between template state, package.json, and Cargo.toml",
-    );
-  }
-  if (cargoIdentity.libName !== rustLibName(identity.name)) {
-    throw new Error("Cargo library name does not match the initialized application identity");
-  }
-  if (!mainRs.includes(`${cargoIdentity.libName}::run()`)) {
-    throw new Error("Rust binary entry point does not call the initialized library name");
-  }
-  if (
-    tauriConfig.productName !== identity.title ||
-    tauriConfig.identifier !== identity.identifier ||
-    tauriConfig.app?.windows?.[0]?.title !== identity.title
-  ) {
-    throw new Error("Tauri product/window/bundle identity drifted from template state");
-  }
-  if (
-    !bunLock.includes(`"name": "${identity.name}"`) ||
-    !cargoLock.includes(`name = "${identity.name}"\n`)
-  ) {
-    throw new Error("committed dependency lock identity drifted from template state");
-  }
-  if (!workflow.includes(`component: ${identity.name}`)) {
-    throw new Error("coding-tooling workflow component drifted from application identity");
-  }
+  assertIdentity(identity, {
+    packageJson,
+    cargoIdentity,
+    mainRs,
+    tauriConfig,
+    bunLock,
+    cargoLock,
+    workflow,
+  });
 
   const recipesById = new Map(registry.recipes.map((recipe) => [recipe.id, recipe]));
   const activeRecipes = state.activatedRecipes.map((recipeId) => {
