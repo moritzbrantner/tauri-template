@@ -4,6 +4,7 @@ import { pathToFileURL } from "node:url";
 
 const CAPABILITIES_DIR = "src-tauri/capabilities";
 const DEFAULT_CAPABILITY = "default.json";
+const TAURI_CONFIG = "src-tauri/tauri.conf.json";
 
 function sameStrings(actual, expected) {
   return (
@@ -30,7 +31,20 @@ export function assertDefaultCapability(capability) {
   }
 }
 
+export function assertNoInlineCapabilities(tauriConfig) {
+  const configured = tauriConfig?.app?.security?.capabilities;
+  if (configured === undefined) {
+    return;
+  }
+  if (!Array.isArray(configured) || !configured.every((entry) => entry === "default")) {
+    throw new Error(
+      `${TAURI_CONFIG} app.security.capabilities may only reference the "default" capability file; got ${JSON.stringify(configured)}`,
+    );
+  }
+}
+
 export async function checkCapabilityBudget(root = process.cwd()) {
+  assertNoInlineCapabilities(JSON.parse(await readFile(path.join(root, TAURI_CONFIG), "utf8")));
   const capabilityDir = path.join(root, CAPABILITIES_DIR);
   const capabilityFiles = (await readdir(capabilityDir))
     .filter(
