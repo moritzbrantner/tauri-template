@@ -149,3 +149,35 @@ jobs:
 
       - name: Verify fresh generated state
         run: bun run template:smoke
+
+  recipe-smoke:
+    name: Recipe composition smoke test
+    needs: [fast, native]
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
+        with:
+          bun-version: 1.4.0
+
+      - name: Install exact Rust toolchain
+        run: |
+          rustup toolchain install 1.98.0 --profile minimal --component rustfmt,clippy
+          rustup default 1.98.0
+          rustc --version
+          cargo --version
+
+      - name: Install Tauri Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf
+
+      - name: Verify every recipe and composed state
+        run: bun run recipes:smoke

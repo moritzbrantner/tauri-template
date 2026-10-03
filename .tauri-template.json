@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "kind": "template",
+  "templateRepository": "moritzbrantner/tauri-template",
+  "activatedRecipes": [],
+  "recipeConfig": {}
+}
