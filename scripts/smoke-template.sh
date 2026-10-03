@@ -2,13 +2,14 @@
 set -euo pipefail
 
 root="$(git rev-parse --show-toplevel)"
+source_revision="$(git -C "$root" rev-parse HEAD)"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
 git -C "$root" archive --format=tar HEAD | tar -xf - -C "$tmp"
 cd "$tmp"
 
-bun run init -- \
+TAURI_TEMPLATE_REVISION="$source_revision" bun run init -- \
   --name smoke-app \
   --identifier com.example.smoke-app \
   --title "Smoke App"
@@ -54,6 +55,26 @@ grep -q 'component: rebranded-smoke-app' .github/workflows/validate.yml
 grep -q '^# Rebranded Smoke App$' README.md
 grep -q '`rebranded-smoke-app` is an application initialized from `tauri-template`' AGENTS.md
 
+SOURCE_REVISION="$source_revision" node - <<'NODE'
+const fs = require("node:fs");
+const state = JSON.parse(fs.readFileSync(".tauri-template.json", "utf8"));
+if (state.kind !== "application") throw new Error("template state did not become application state");
+if (state.application?.name !== "rebranded-smoke-app") throw new Error("rebrand identity was not recorded");
+if (state.provenance?.sourceRevision !== process.env.SOURCE_REVISION) {
+  throw new Error(`expected source revision ${process.env.SOURCE_REVISION}, got ${state.provenance?.sourceRevision}`);
+}
+if (!/^[0-9a-f]{64}$/.test(state.provenance?.sourceFingerprint ?? "")) {
+  throw new Error("template source fingerprint is missing or malformed");
+}
+if (JSON.stringify(state.provenance?.toolchains) !== JSON.stringify({ bun: "1.4.0", rust: "1.98.0" })) {
+  throw new Error(`unexpected source toolchains: ${JSON.stringify(state.provenance?.toolchains)}`);
+}
+if (state.activatedRecipes.length !== 0 || Object.keys(state.recipeConfig).length !== 0) {
+  throw new Error("rebranding must preserve an empty recipe state");
+}
+NODE
+
+bun run template:doctor
 bun install --frozen-lockfile
 bun run verify:fast
 bun run verify:native
