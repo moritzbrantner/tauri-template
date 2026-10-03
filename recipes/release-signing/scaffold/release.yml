@@ -1,0 +1,133 @@
+name: Release desktop application
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Exact release tag, for example v1.2.3
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: desktop-release-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Release (${{ matrix.label }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: Linux x64
+            runner: ubuntu-22.04
+          - label: Windows x64
+            runner: windows-2025
+          - label: macOS
+            runner: macos-15
+    runs-on: ${{ matrix.runner }}
+
+    steps:
+      - name: Check out exact release source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      # An existing tag must point at the checked-out commit; otherwise binaries
+      # from one commit would be attached to a release tagged at another. A new
+      # tag is created by tauri-action at this commit (releaseCommitish).
+      - name: Verify checkout matches an existing release tag
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          tag_refs="$(git ls-remote --tags origin "refs/tags/${RELEASE_TAG}" "refs/tags/${RELEASE_TAG}^{}")"
+          if [[ -z "$tag_refs" ]]; then
+            echo "Tag ${RELEASE_TAG} does not exist yet; it will be created at $(git rev-parse HEAD)."
+            exit 0
+          fi
+          tag_commit="$(awk -v peeled="refs/tags/${RELEASE_TAG}^{}" '$2 == peeled { print $1 }' <<<"$tag_refs")"
+          if [[ -z "$tag_commit" ]]; then
+            tag_commit="$(awk '{ print $1; exit }' <<<"$tag_refs")"
+          fi
+          if [[ "$tag_commit" != "$(git rev-parse HEAD)" ]]; then
+            echo "::error::Tag ${RELEASE_TAG} points at ${tag_commit}, but the workflow checked out $(git rev-parse HEAD). Run it from the tagged commit."
+            exit 1
+          fi
+
+      - name: Install exact Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
+        with:
+          bun-version: 1.4.0
+
+      - name: Install exact Rust toolchain
+        run: |
+          rustup toolchain install 1.98.0 --profile minimal
+          rustup default 1.98.0
+          rustc --version
+          cargo --version
+
+      - name: Install Linux Tauri dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf
+
+      - name: Install frozen application dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Verify application foundation
+        run: bun run verify:fast
+
+      - name: Verify tag, updater signing, and platform signing inputs
+        id: release-preflight
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
+          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+          # Pass the input through the environment, never by interpolating it into the script.
+          RELEASE_TAG: ${{ inputs.tag }}
+        shell: bash
+        run: node ./scripts/verify-release-version.mjs "$RELEASE_TAG"
+
+      - name: Import Windows signing certificate
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
+          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+        run: |
+          New-Item -ItemType Directory -Force -Path certificate | Out-Null
+          Set-Content -Path certificate/tempCert.txt -Value $env:WINDOWS_CERTIFICATE
+          certutil -decode certificate/tempCert.txt certificate/certificate.pfx
+          Remove-Item certificate/tempCert.txt
+          $password = ConvertTo-SecureString -String $env:WINDOWS_CERTIFICATE_PASSWORD -Force -AsPlainText
+          Import-PfxCertificate -FilePath certificate/certificate.pfx -CertStoreLocation Cert:\CurrentUser\My -Password $password | Out-Null
+
+      - name: Build signed bundles and upload draft release
+        uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        with:
+          tagName: ${{ inputs.tag }}
+          releaseName: ${{ inputs.tag }}
+          releaseCommitish: ${{ github.sha }}
+          releaseDraft: true
+          prerelease: ${{ contains(inputs.tag, '-') }}
+          generateReleaseNotes: true
+          uploadUpdaterJson: ${{ steps.release-preflight.outputs.updater_enabled }}
+          uploadUpdaterSignatures: ${{ steps.release-preflight.outputs.updater_enabled }}

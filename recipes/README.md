@@ -25,7 +25,7 @@ bun run recipe:add -- folder-watch --scope '$APPDATA/imports/**/*'
 
 Activation records the recipe and its deterministic configuration in `.tauri-template.json`. Reapplying the same recipe with the same configuration is a no-op. A conflicting existing dependency, permission scope, generated file, or recipe configuration is not overwritten automatically.
 
-The transformation engine prepares source changes first, updates lockfiles through the native Bun/Cargo resolvers, verifies frozen/locked resolution and the capability budget, and rolls the activation back if resolution or validation fails.
+The transformation engine prepares source changes first, updates lockfiles through the native Bun/Cargo resolvers, verifies frozen/locked resolution and the capability budget, runs recipe-owned validation commands, and rolls the activation back if resolution or validation fails.
 
 ## Rules
 
@@ -44,7 +44,10 @@ The transformation engine prepares source changes first, updates lockfiles throu
 - `sqlite-storage`: use Tauri's SQL plugin for generic SQLite access; activation grants read-oriented `sql:default` only, while migrations/domain repositories and broader write authority remain application-specific.
 - `background-jobs`: install a pure Rust lifecycle scaffold with monotonic progress and idempotent cancellation; Tauri command/event and frontend adapters remain application-owned seams.
 - `updater`: add signed-update runtime dependencies and the narrow `process:allow-restart` permission, while signing material, endpoints, release policy, and UX remain application-owned.
+- `release-signing`: add a manual cross-platform draft-release workflow and exact tag/version preflight. It consumes only application-owned GitHub secrets and signing configuration; it does not add runtime dependencies or permissions.
 
-`bun run recipes:smoke` initializes a disposable application, dry-runs and applies every registered recipe, verifies second application is byte-stable, verifies declared capability state, and runs the frozen/locked frontend and Rust validation tiers.
+`updater` and `release-signing` are intentionally separate. An application may ship signed installers without implementing in-app updates, and enabling the updater does not automatically create a release pipeline. When both are active, release preflight requires the app-owned updater key/configuration before updater metadata can be published.
 
-Official Tauri 2 documentation remains the source of truth for plugin permission and platform semantics. Dependency versions are explicit in `registry.json` and should be updated through normal dependency/tooling review rather than silently resolved during activation.
+`bun run recipes:smoke` initializes a disposable application, dry-runs and applies every registered recipe, verifies second application is byte-stable, verifies declared capability state, exercises recipe-owned validation, and runs the frozen/locked frontend and Rust validation tiers.
+
+Official Tauri 2 documentation remains the source of truth for plugin permission, signing, and platform semantics. Dependency/action versions are explicit in the recipe sources and should be updated through normal dependency/tooling review rather than silently resolved during activation.
