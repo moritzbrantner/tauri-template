@@ -65,7 +65,10 @@ impl JobState {
     }
 
     pub fn is_terminal(&self) -> bool {
-        matches!(self, Self::Completed | Self::Cancelled | Self::Failed { .. })
+        matches!(
+            self,
+            Self::Completed | Self::Cancelled | Self::Failed { .. }
+        )
     }
 }
 
@@ -76,16 +79,29 @@ mod tests {
     #[test]
     fn progress_is_monotonic_and_bounded() {
         let running = JobState::Queued.start().expect("queued jobs should start");
-        let halfway = running.with_progress(0.5).expect("valid progress should advance");
+        let halfway = running
+            .with_progress(0.5)
+            .expect("valid progress should advance");
 
-        assert_eq!(halfway.with_progress(0.4), Err(JobTransitionError::ProgressRegressed));
-        assert_eq!(halfway.with_progress(1.1), Err(JobTransitionError::InvalidProgress));
-        assert_eq!(halfway.with_progress(f32::NAN), Err(JobTransitionError::InvalidProgress));
+        assert_eq!(
+            halfway.with_progress(0.4),
+            Err(JobTransitionError::ProgressRegressed)
+        );
+        assert_eq!(
+            halfway.with_progress(1.1),
+            Err(JobTransitionError::InvalidProgress)
+        );
+        assert_eq!(
+            halfway.with_progress(f32::NAN),
+            Err(JobTransitionError::InvalidProgress)
+        );
     }
 
     #[test]
     fn cancellation_is_idempotent_before_terminal_completion() {
-        let cancelled = JobState::Queued.cancel().expect("queued jobs should cancel");
+        let cancelled = JobState::Queued
+            .cancel()
+            .expect("queued jobs should cancel");
         assert_eq!(cancelled.cancel(), Ok(JobState::Cancelled));
         assert!(cancelled.is_terminal());
     }
@@ -97,7 +113,13 @@ mod tests {
             .and_then(|state| state.complete())
             .expect("running jobs should complete");
 
-        assert_eq!(completed.cancel(), Err(JobTransitionError::InvalidTransition));
-        assert_eq!(completed.start(), Err(JobTransitionError::InvalidTransition));
+        assert_eq!(
+            completed.cancel(),
+            Err(JobTransitionError::InvalidTransition)
+        );
+        assert_eq!(
+            completed.start(),
+            Err(JobTransitionError::InvalidTransition)
+        );
     }
 }
