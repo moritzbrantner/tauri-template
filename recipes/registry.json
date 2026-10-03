@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "recipes": [
+    {
+      "id": "folder-watch",
+      "title": "Scoped folder watching",
+      "path": "recipes/folder-watch",
+      "kind": "official-plugin",
+      "nativeDependencies": ["tauri-plugin-fs@2 with watch feature"],
+      "frontendDependencies": ["@tauri-apps/plugin-fs@2"],
+      "permissions": ["fs:allow-watch", "fs:allow-unwatch"],
+      "requiresScope": true
+    },
+    {
+      "id": "sqlite-storage",
+      "title": "SQLite storage",
+      "path": "recipes/sqlite-storage",
+      "kind": "official-plugin",
+      "nativeDependencies": ["tauri-plugin-sql@2 with sqlite feature"],
+      "frontendDependencies": ["@tauri-apps/plugin-sql@2"],
+      "permissions": ["sql:default", "sql:allow-execute"],
+      "requiresScope": false
+    },
+    {
+      "id": "background-jobs",
+      "title": "Cancellable background jobs",
+      "path": "recipes/background-jobs",
+      "kind": "core-plus-adapter",
+      "nativeDependencies": [],
+      "frontendDependencies": [],
+      "permissions": [],
+      "requiresScope": false
+    },
+    {
+      "id": "updater",
+      "title": "Signed application updates",
+      "path": "recipes/updater",
+      "kind": "official-plugin",
+      "nativeDependencies": ["tauri-plugin-updater@2", "tauri-plugin-process@2"],
+      "frontendDependencies": ["@tauri-apps/plugin-updater@2", "@tauri-apps/plugin-process@2"],
+      "permissions": ["updater:default", "process:allow-restart"],
+      "requiresScope": false
+    }
+  ]
+}
