@@ -17,6 +17,23 @@ The template keeps the default application self-contained. It does not require s
 - vendored coding-agent convention snapshot
 - Renovate policy inherited from the shared repository landscape
 
+## Initialize a new app
+
+Clone/use the template, then initialize its identity once:
+
+```bash
+bun run init -- \
+  --name media-workbench \
+  --identifier com.example.media-workbench \
+  --title "Media Workbench"
+```
+
+`--name` is the lowercase package/binary slug. `--identifier` is the application bundle identifier in reverse-domain notation. `--title` is optional and defaults to a title derived from the slug.
+
+Initialization updates the JavaScript package and lock identity, Cargo package/library and lock identity, the Rust binary-to-library entry point, Tauri product/window/bundle identity, the HTML title, validation component selection, and the project-facing README/agent wording. A second initialization is rejected unless `--force` is supplied for an intentional rebrand.
+
+The template smoke test initializes a disposable `smoke-app` before verification so frozen/locked checks continuously prove the initialized state is usable.
+
 ## Architecture
 
 Keep three layers distinct:
@@ -77,7 +94,7 @@ Full repository verification:
 bun run verify
 ```
 
-Fresh-template verification copies the committed repository into a disposable directory and validates the copy independently:
+Fresh-template verification copies the committed repository into a disposable directory, initializes it with a non-template identity, and validates the copy independently:
 
 ```bash
 bun run template:smoke
