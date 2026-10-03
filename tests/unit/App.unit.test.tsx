@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import App from "../../src/App";
 
-vi.mock("../../src/greet", () => ({
+vi.mock("../../src/platform/tauri/greet", () => ({
   greet: vi.fn(async (name: string) => `Hello, ${name}!`),
 }));
 

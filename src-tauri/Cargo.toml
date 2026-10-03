@@ -1,3 +1,7 @@
+[workspace]
+members = ["crates/app-core"]
+resolver = "2"
+
 [package]
 name = "tauri-template"
 version = "0.1.0"
@@ -13,4 +17,5 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+app-core = { path = "crates/app-core" }
 tauri = { version = "2", features = [] }
