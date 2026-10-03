@@ -11,13 +11,16 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "strict": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true
   },
   "include": ["src"],
-  "exclude": ["src/**/*.playwright.test.ts"],
+  "exclude": ["src/**/*.playwright.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

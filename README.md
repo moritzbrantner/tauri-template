@@ -8,11 +8,13 @@ The template keeps the default application self-contained. It does not require s
 
 - Tauri 2 native shell
 - React 19 + TypeScript + Vite
-- Bun package management
+- exact Bun and Rust toolchain pins
+- Oxfmt + Oxlint, including type-aware TypeScript checks
 - one typed frontend-to-Rust command as an IPC smoke test
 - Vitest unit tests
 - Playwright browser-shell smoke test
-- Cargo tests for native code
+- Cargo fmt, Clippy, check, test, and build validation
+- vendored coding-agent convention snapshot
 - Renovate policy inherited from the shared repository landscape
 
 ## Architecture
@@ -25,17 +27,32 @@ Keep three layers distinct:
 
 The default template intentionally contains only one command. Storage, filesystem access, folder watching, secrets, updater support, background jobs, notifications, tray integration, sidecars, and similar features should be added as explicit capabilities when an application needs them.
 
-## Setup
+## Environment setup
+
+The repository owns exact Bun and Rust pins. On a prepared machine, provision the declared repository environment with:
 
 ```bash
-bun install --frozen-lockfile
-bun run tauri dev
+bash scripts/codex-environment.sh setup
 ```
 
-For frontend-only work:
+For an existing environment after dependency changes:
+
+```bash
+bash scripts/codex-environment.sh maintenance
+```
+
+The environment contract is declared in `.repository-environment.toml`. On Linux it includes the WebKit/GTK development packages needed by Tauri. Both setup modes use locked JavaScript and Cargo dependency resolution.
+
+For frontend-only work after setup:
 
 ```bash
 bun run dev
+```
+
+For the desktop runtime:
+
+```bash
+bun run tauri dev
 ```
 
 ## Verification
@@ -58,7 +75,17 @@ Full repository verification:
 bun run verify
 ```
 
+Fresh-template verification copies the committed repository into a disposable directory and validates the copy independently:
+
+```bash
+bun run template:smoke
+```
+
 `test:e2e` exercises the browser-rendered shell. It does not claim to exercise Tauri windows or OS integration. Native integration behavior belongs in a separate native validation tier.
+
+## Repository policy
+
+`conventions.json`, `conventions.lock.json`, and `.conventions/` are the committed convention contract for coding agents and CI. Update them through `coding-tooling`; do not hand-edit the vendored snapshot. `.coding-tooling.json` declares the deterministic validation tiers used by the shared repository foundation.
 
 ## Adding a native capability
 

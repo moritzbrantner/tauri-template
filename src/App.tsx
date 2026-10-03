@@ -26,7 +26,8 @@ export default function App() {
         <p className="eyebrow">Tauri 2 · React · TypeScript</p>
         <h1 id="starter-title">Small by default, ready to grow.</h1>
         <p className="lede">
-          Keep application logic independent from the desktop shell and add native capabilities only when an app needs them.
+          Keep application logic independent from the desktop shell and add native capabilities only
+          when an app needs them.
         </p>
 
         <form className="greet-form" onSubmit={handleSubmit}>
