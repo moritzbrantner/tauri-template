@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "frontendRuntimeDependencies": ["@tauri-apps/api", "react", "react-dom"],
+  "rustRootDependencies": ["app-core", "tauri"],
+  "defaultTauriPlugins": [],
+  "defaultPermissions": [],
+  "requiredSeams": [
+    "src/platform/tauri/greet.ts",
+    "src-tauri/crates/app-core/Cargo.toml",
+    "src-tauri/crates/app-core/src/lib.rs",
+    "src-tauri/capabilities/default.json",
+    "src-tauri/src/lib.rs"
+  ],
+  "frontendNativeImportOwners": ["src/platform/tauri/greet.ts"]
+}
