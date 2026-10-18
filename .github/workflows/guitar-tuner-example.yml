@@ -1,17 +1,14 @@
 name: Guitar tuner example
 
 on:
-  pull_request:
-    paths:
-      - "examples/guitar-tuner/**"
-      - ".github/workflows/guitar-tuner-example.yml"
   push:
     branches:
-      - main
+    - main
     paths:
-      - "examples/guitar-tuner/**"
-      - ".github/workflows/guitar-tuner-example.yml"
-  workflow_dispatch:
+    - examples/guitar-tuner/**
+    - .github/workflows/guitar-tuner-example.yml
+  workflow_dispatch: null
+  workflow_call: null
 
 permissions:
   contents: read
