@@ -1,42 +1,28 @@
 name: GitHub Pages
 
 on:
-  pull_request:
-    paths:
-      - "src/**"
-      - "public/**"
-      - "index.html"
-      - "examples/**"
-      - "portfolio/**"
-      - "scripts/build-pages.mjs"
-      - ".env.example"
-      - "package.json"
-      - "bun.lock"
-      - "tsconfig.json"
-      - "tsconfig.node.json"
-      - "vite.config.ts"
-      - ".github/workflows/pages.yml"
   push:
     branches:
-      - main
+    - main
     paths:
-      - "src/**"
-      - "public/**"
-      - "index.html"
-      - "examples/**"
-      - "portfolio/**"
-      - "scripts/build-pages.mjs"
-      - ".env.example"
-      - "package.json"
-      - "bun.lock"
-      - "tsconfig.json"
-      - "tsconfig.node.json"
-      - "vite.config.ts"
-      - ".github/workflows/pages.yml"
-  workflow_dispatch:
+    - src/**
+    - public/**
+    - index.html
+    - examples/**
+    - portfolio/**
+    - scripts/build-pages.mjs
+    - .env.example
+    - package.json
+    - bun.lock
+    - tsconfig.json
+    - tsconfig.node.json
+    - vite.config.ts
+    - .github/workflows/pages.yml
+  workflow_dispatch: null
+  workflow_call: null
 
 concurrency:
-  group: github-pages-${{ github.ref }}
+  group: tauri-template-pages-github-pages-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:

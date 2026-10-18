@@ -33,11 +33,44 @@ jobs:
       install_playwright_browsers: chromium
 
   native:
+    outputs:
+      allow-skipped: ${{ steps.merge-scope.outputs.allow-skipped }}
+      validate-pages: ${{ steps.merge-scope.outputs.validate-pages }}
+      validate-guitar-tuner-example: ${{ steps.merge-scope.outputs.validate-guitar-tuner-example }}
     name: Native Rust validation
     runs-on: ubuntu-22.04
     steps:
       - name: Check out repository
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Determine required PR validation scope
+        id: merge-scope
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BASE_BRANCH: ${{ github.base_ref }}
+        shell: bash
+        run: |
+          python3 - <<'PYTHON'
+          import json, os, re, subprocess
+          paths = subprocess.check_output(["git", "diff", "--no-renames", "--name-only", "-z", os.environ["BASE_SHA"], os.environ["HEAD_SHA"]]).decode().split("\0")
+          filters = {'validate-pages': {'paths': ['src/**', 'public/**', 'index.html', 'examples/**', 'portfolio/**', 'scripts/build-pages.mjs', '.env.example', 'package.json', 'bun.lock', 'tsconfig.json', 'tsconfig.node.json', 'vite.config.ts', '.github/workflows/pages.yml'], 'branches': None}, 'validate-guitar-tuner-example': {'paths': ['examples/guitar-tuner/**', '.github/workflows/guitar-tuner-example.yml'], 'branches': None}}
+          def matches(path, pattern):
+              pattern = re.escape(pattern).replace(r"\*\*", ".*").replace(r"\*", "[^/]*").replace(r"\?", "[^/]")
+              return re.fullmatch(pattern, path) is not None
+          skipped = []
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              for name, scope in filters.items():
+                  matches_paths = scope["paths"] is None or any(matches(path, pattern) for path in paths if path for pattern in scope["paths"])
+                  matches_branch = scope["branches"] is None or any(matches(os.environ["BASE_BRANCH"], pattern) for pattern in scope["branches"])
+                  required = matches_paths and matches_branch
+                  print(f"{name}={str(required).lower()}", file=output)
+                  if not required:
+                      skipped.append(name)
+              print("allow-skipped=" + json.dumps(skipped), file=output)
+          PYTHON
 
       - name: Install exact Rust toolchain
         run: |
@@ -184,3 +217,31 @@ jobs:
 
       - name: Verify every recipe and composed state
         run: bun run recipes:smoke
+
+  validate-pages:
+    needs: native
+    if: github.event_name == 'pull_request' && needs.native.outputs.validate-pages == 'true'
+    uses: ./.github/workflows/pages.yml
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+  validate-guitar-tuner-example:
+    needs: native
+    if: github.event_name == 'pull_request' && needs.native.outputs.validate-guitar-tuner-example == 'true'
+    uses: ./.github/workflows/guitar-tuner-example.yml
+    permissions:
+      contents: read
+
+  merge-ready:
+    name: merge-ready
+    if: ${{ always() && github.event_name == 'pull_request' }}
+    needs: ["fast", "e2e", "native", "native-runtime", "template-smoke", "recipe-smoke", "validate-pages", "validate-guitar-tuner-example"]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: moritzbrantner/reusable-workflows/.github/actions/merge-ready@b0f25f241d76af2584dfc9e375084ff5c5cb97da
+        with:
+          needs: ${{ toJSON(needs) }}
+          required: '["fast", "e2e", "native", "native-runtime", "template-smoke", "recipe-smoke", "validate-pages", "validate-guitar-tuner-example"]'
+          allow-skipped: ${{ needs.native.outputs.allow-skipped || '[]' }}
