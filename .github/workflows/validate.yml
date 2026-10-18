@@ -235,7 +235,7 @@ jobs:
       contents: read
 
   merge-ready:
-    name: merge-ready
+    name: ${{ github.event_name == 'pull_request' && 'merge-ready' || 'validation-summary' }}
     if: ${{ always() && github.event_name == 'pull_request' }}
     needs: ["fast", "e2e", "native", "native-runtime", "template-smoke", "recipe-smoke", "validate-pages", "validate-guitar-tuner-example"]
     runs-on: ubuntu-latest
