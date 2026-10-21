@@ -26,7 +26,7 @@ jobs:
     name: Browser E2E
     uses: moritzbrantner/reusable-workflows/.github/workflows/e2e-validation.yml@8da6ad737d4746159414bde686d5c7422e0a9232
     with:
-      bun_version: "1.4.0"
+      bun_version: "1.4.3"
       install_command: bun install --frozen-lockfile
       e2e_command: bun run test:e2e
       install_playwright: true

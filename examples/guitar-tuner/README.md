@@ -20,7 +20,7 @@ bun install --frozen-lockfile
 bun run tauri dev
 ```
 
-The repository pins Bun to 1.4.0 and Rust to 1.98.0. The example also pins its top-level Tauri and Tauri Build dependencies to the same accepted runtime generation as the template; the committed Cargo lock fixes the complete transitive set. On Linux, install the same WebKit/GTK development packages used by the template validation workflow.
+The repository pins Bun to 1.4.3 and Rust to 1.98.0. The example also pins its top-level Tauri and Tauri Build dependencies to the same accepted runtime generation as the template; the committed Cargo lock fixes the complete transitive set. On Linux, install the same WebKit/GTK development packages used by the template validation workflow.
 
 On macOS, `src-tauri/Info.plist` supplies the microphone usage description required for the system permission prompt.
 
