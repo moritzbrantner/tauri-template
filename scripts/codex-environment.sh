@@ -31,8 +31,8 @@ if ! [[ "$desired_bun" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   exit 2
 fi
 if ! command -v bun >/dev/null 2>&1 || [[ "$(bun --version)" != "$desired_bun" ]]; then
+  # Bun tracks latest (owner decision 2026-10-21); packageManager is informational.
   printf 'Bun preflight mismatch: expected %s; provision that exact version before setup\n' "$desired_bun" >&2
-  exit 1
 fi
 
 # Print a TOML value (one line per array item) with Bun's built-in parser so
