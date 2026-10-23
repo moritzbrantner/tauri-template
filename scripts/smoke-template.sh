@@ -66,7 +66,7 @@ if (state.provenance?.sourceRevision !== process.env.SOURCE_REVISION) {
 if (!/^[0-9a-f]{64}$/.test(state.provenance?.sourceFingerprint ?? "")) {
   throw new Error("template source fingerprint is missing or malformed");
 }
-if (JSON.stringify(state.provenance?.toolchains) !== JSON.stringify({ bun: "1.4.3", rust: "1.99.1" })) {
+if (JSON.stringify(state.provenance?.toolchains) !== JSON.stringify({ bun: "1.4.3", rust: "stable" })) {
   throw new Error(`unexpected source toolchains: ${JSON.stringify(state.provenance?.toolchains)}`);
 }
 if (state.activatedRecipes.length !== 0 || Object.keys(state.recipeConfig).length !== 0) {
