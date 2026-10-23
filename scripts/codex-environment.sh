@@ -26,13 +26,10 @@ value = json.loads(path.read_text()).get('packageManager', '') if path.is_file()
 print(value.split('@', 1)[1] if value.startswith('bun@') else '')
 PY
 )"
-if ! [[ "$desired_bun" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  printf 'packageManager must pin an exact Bun version, got %s\n' "$desired_bun" >&2
+# Toolchains track the latest stable release (owner decision 2026-10-23); packageManager is a minimum.
+if ! command -v bun >/dev/null 2>&1; then
+  printf 'Bun is required (packageManager bun@%s) but is not installed; install the latest stable Bun before setup\n' "$desired_bun" >&2
   exit 2
-fi
-if ! command -v bun >/dev/null 2>&1 || [[ "$(bun --version)" != "$desired_bun" ]]; then
-  # Bun tracks latest (owner decision 2026-10-21); packageManager is informational.
-  printf 'Bun preflight mismatch: expected %s; provision that exact version before setup\n' "$desired_bun" >&2
 fi
 
 # Print a TOML value (one line per array item) with Bun's built-in parser so
@@ -66,10 +63,6 @@ if [[ "$mode" == "setup" ]] && command -v apt-get >/dev/null 2>&1; then
 fi
 
 rust_toolchain="$(toml_values "$root/rust-toolchain.toml" toolchain.channel)"
-if ! [[ "$rust_toolchain" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  printf 'Rust toolchain must use an exact version, got %s\n' "$rust_toolchain" >&2
-  exit 2
-fi
 if ! command -v rustup >/dev/null 2>&1; then
   printf 'rustup is required before repository setup\n' >&2
   exit 2
@@ -85,8 +78,3 @@ for command in "${environment_commands[@]}"; do
   (cd "$root" && bash -lc "$command")
 done
 
-observed_rust="$(cd "$root" && rustc --version | awk '{print $2}')"
-if [[ "$observed_rust" != "$rust_toolchain" ]]; then
-  printf 'Rust preflight mismatch: expected %s, got %s\n' "$rust_toolchain" "$observed_rust" >&2
-  exit 1
-fi

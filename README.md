@@ -8,7 +8,7 @@ The template keeps the default application self-contained. It does not require s
 
 - Tauri 2 native shell
 - React 19 + TypeScript + Vite
-- exact Bun and Rust toolchain pins
+- latest stable Bun and Rust toolchains
 - Oxfmt + Oxlint, including type-aware TypeScript checks
 - one typed frontend-to-Rust command as an IPC smoke test
 - Vitest unit tests
@@ -48,7 +48,7 @@ The default template intentionally contains only one command. Storage, filesyste
 
 ## Environment setup
 
-The repository owns exact Bun and Rust pins. On a prepared machine, provision the declared repository environment with:
+Bun and Rust track the latest stable release. On a prepared machine, provision the declared repository environment with:
 
 ```bash
 bash scripts/codex-environment.sh setup
