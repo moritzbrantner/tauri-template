@@ -3,6 +3,7 @@ set -euo pipefail
 
 root="$(git rev-parse --show-toplevel)"
 source_revision="$(git -C "$root" rev-parse HEAD)"
+expected_bun="$(tr -d '[:space:]' < "$root/.bun-version")"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
@@ -55,7 +56,7 @@ grep -q 'component: rebranded-smoke-app' .github/workflows/validate.yml
 grep -q '^# Rebranded Smoke App$' README.md
 grep -q '`rebranded-smoke-app` is an application initialized from `tauri-template`' AGENTS.md
 
-SOURCE_REVISION="$source_revision" node - <<'NODE'
+SOURCE_REVISION="$source_revision" EXPECTED_BUN="$expected_bun" node - <<'NODE'
 const fs = require("node:fs");
 const state = JSON.parse(fs.readFileSync(".tauri-template.json", "utf8"));
 if (state.kind !== "application") throw new Error("template state did not become application state");
@@ -66,7 +67,7 @@ if (state.provenance?.sourceRevision !== process.env.SOURCE_REVISION) {
 if (!/^[0-9a-f]{64}$/.test(state.provenance?.sourceFingerprint ?? "")) {
   throw new Error("template source fingerprint is missing or malformed");
 }
-if (JSON.stringify(state.provenance?.toolchains) !== JSON.stringify({ bun: "1.4.3", rust: "stable" })) {
+if (JSON.stringify(state.provenance?.toolchains) !== JSON.stringify({ bun: process.env.EXPECTED_BUN, rust: "stable" })) {
   throw new Error(`unexpected source toolchains: ${JSON.stringify(state.provenance?.toolchains)}`);
 }
 if (state.activatedRecipes.length !== 0 || Object.keys(state.recipeConfig).length !== 0) {
