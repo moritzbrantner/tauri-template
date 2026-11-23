@@ -3,7 +3,7 @@ set -euo pipefail
 
 root="$(git rev-parse --show-toplevel)"
 source_revision="$(git -C "$root" rev-parse HEAD)"
-expected_bun="$(tr -d '[:space:]' < "$root/.bun-version")"
+expected_bun="latest"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 

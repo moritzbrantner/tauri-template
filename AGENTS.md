@@ -25,7 +25,7 @@
 
 ## Environment
 
-- Toolchains track the latest stable release: `package.json#packageManager` is a Bun minimum, not a pin.
+- Toolchains track the latest stable release: Bun is not pinned (no `packageManager`, `.bun-version` or `engines.bun`); `bun.lock` stays committed.
 - `rust-toolchain.toml` selects the Rust `stable` channel.
 - `.repository-environment.toml` declares non-native environment requirements such as Linux Tauri packages.
 - `scripts/codex-environment.sh` is the stable setup/maintenance entrypoint.
