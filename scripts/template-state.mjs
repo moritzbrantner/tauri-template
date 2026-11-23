@@ -23,25 +23,17 @@ async function read(root, relativePath) {
   return readFile(path.join(root, relativePath), "utf8");
 }
 
+// Bun is not pinned: the template and its applications use the latest stable Bun
+// (shared convention BUN-001). Rust follows the channel in rust-toolchain.toml.
+export const BUN_TOOLCHAIN = "latest";
+
 export async function readToolchainPins(root) {
-  const [bunContent, packageContent, rustContent] = await Promise.all([
-    read(root, ".bun-version"),
-    read(root, "package.json"),
-    read(root, "rust-toolchain.toml"),
-  ]);
-  const bun = bunContent.trim();
-  const packageManager = JSON.parse(packageContent).packageManager;
+  const rustContent = await read(root, "rust-toolchain.toml");
   const rustMatch = rustContent.match(/^channel\s*=\s*"([^"]+)"/m);
-  if (!bun || !rustMatch) {
-    throw new Error("template toolchain pins must declare both Bun and Rust versions");
+  if (!rustMatch) {
+    throw new Error("rust-toolchain.toml must declare a Rust channel");
   }
-  // package.json#packageManager is the authoritative Bun pin; .bun-version must agree.
-  if (packageManager !== `bun@${bun}`) {
-    throw new Error(
-      `package.json packageManager (${JSON.stringify(packageManager)}) must pin bun@${bun} to match .bun-version`,
-    );
-  }
-  return { bun, rust: rustMatch[1] };
+  return { bun: BUN_TOOLCHAIN, rust: rustMatch[1] };
 }
 
 async function walkFiles(root, relativeDirectory = "") {

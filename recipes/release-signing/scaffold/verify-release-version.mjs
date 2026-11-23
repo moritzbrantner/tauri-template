@@ -14,7 +14,9 @@ function requiredEnvironment(name) {
 
 function packageVersion(cargoToml) {
   const match = cargoToml.match(/\[package\][\s\S]*?\nversion = "([^"]+)"/);
-  if (!match) fail("src-tauri/Cargo.toml does not declare the root package version");
+  if (!match) {
+    fail("src-tauri/Cargo.toml does not declare the root package version");
+  }
   return match[1];
 }
 

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { doctor } from "../../scripts/template-doctor.mjs";
 
 describe("template doctor", () => {
