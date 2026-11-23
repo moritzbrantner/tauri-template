@@ -20,6 +20,16 @@ function centsText(reading: TuningReading | null): string {
   return `${rounded > 0 ? "+" : ""}${rounded} cents`;
 }
 
+function listenButtonText(nativeRuntime: boolean, starting: boolean, listening: boolean): string {
+  if (!nativeRuntime) {
+    return "Native runtime required";
+  }
+  if (starting) {
+    return "Opening microphone…";
+  }
+  return listening ? "Stop listening" : "Use microphone";
+}
+
 function hasTauriRuntime(): boolean {
   return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 }
@@ -144,13 +154,7 @@ export default function App() {
           disabled={starting || !nativeRuntime}
           onClick={listening ? stopListening : startListening}
         >
-          {!nativeRuntime
-            ? "Native runtime required"
-            : starting
-              ? "Opening microphone…"
-              : listening
-                ? "Stop listening"
-                : "Use microphone"}
+          {listenButtonText(nativeRuntime, starting, listening)}
         </button>
         <p className="privacy">Audio is analyzed in memory and is not saved or sent to a server.</p>
       </section>
